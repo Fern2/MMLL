@@ -208,18 +208,18 @@ async function saveCardsToSupabase(c){
   // 本地备份
   localStorage.setItem('mmll_cards', JSON.stringify(cards));
   // 覆盖写入 Supabase（先删后插）
-  const {error: delErr} = await supabase.from('cards').delete().neq('id','0');
+  const {error: delErr} = await supabaseClient.from('cards').delete().neq('id','0');
   if(delErr) console.error('删除旧卡片失败', delErr);
-  const {error: insErr} = await supabase.from('cards').insert(cards);
+  const {error: insErr} = await supabaseClient.from('cards').insert(cards);
   if(insErr) console.error('插入卡片失败', insErr);
 }
 
 async function saveRecordsToSupabase(r){
   records = r;
   localStorage.setItem('mmll_records', JSON.stringify(records));
-  const {error: delErr} = await supabase.from('records').delete().neq('id','0');
+  const {error: delErr} = await supabaseClient.from('records').delete().neq('id','0');
   if(delErr) console.error('删除旧记录失败', delErr);
-  const {error: insErr} = await supabase.from('records').insert(records);
+  const {error: insErr} = await supabaseClient.from('records').insert(records);
   if(insErr) console.error('插入记录失败', insErr);
 }
 
@@ -289,10 +289,10 @@ async function saveCardsToSupabase(c){
   // 本地备份
   localStorage.setItem('mmll_cards', JSON.stringify(cards));
   // 删除旧卡片（保留 id 为 0 的占位符）
-  const {error: delErr} = await supabase.from('cards').delete().neq('id','0');
+  const {error: delErr} = await supabaseClient.from('cards').delete().neq('id','0');
   if(delErr) console.error('删除旧卡片失败', delErr);
   // 插入新卡片
-  const {error: insErr} = await supabase.from('cards').insert(cards);
+  const {error: insErr} = await supabaseClient.from('cards').insert(cards);
   if(insErr) console.error('插入卡片失败', insErr);
 }
 
@@ -302,10 +302,10 @@ async function saveRecordsToSupabase(r){
   // 本地备份
   localStorage.setItem('mmll_records', JSON.stringify(records));
   // 删除旧记录（保留 id 为 0 的占位符）
-  const {error: delErr} = await supabase.from('records').delete().neq('id','0');
+  const {error: delErr} = await supabaseClient.from('records').delete().neq('id','0');
   if(delErr) console.error('删除旧记录失败', delErr);
   // 插入新记录
-  const {error: insErr} = await supabase.from('records').insert(records);
+  const {error: insErr} = await supabaseClient.from('records').insert(records);
   if(insErr) console.error('插入记录失败', insErr);
 }
 
