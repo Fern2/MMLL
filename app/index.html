@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>忙忙碌碌 - 医学考研助手</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="忙忙碌碌">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#6C5CE7">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='192' height='192'><rect width='192' height='192' rx='32' fill='%236C5CE7'/><text x='96' y='120' text-anchor='middle' fill='white' font-size='80'>📚</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.2/dist/umd/supabase.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#6C5CE7;--primary-light:#A29BFE;--bg:#F5F3FF;
+  --card-bg:#fff;--text:#1a1a2e;--text-light:#666;--danger:#f53f3f;
+  --success:#00b42a;--radius:16px;--shadow:0 4px 20px rgba(108,92,231,0.1);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);max-width:480px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+.page{display:none;padding:16px 16px 160px;min-height:100vh}
+.page.active{display:block}
+
+/* Tab Bar */
+.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--card-bg);display:flex;justify-content:space-around;padding:8px 0 env(safe-area-inset-bottom,8px);box-shadow:0 -2px 12px rgba(0,0,0,0.06);z-index:100}
+.tab-item{display:flex;flex-direction:column;align-items:center;font-size:11px;color:var(--text-light);gap:4px;padding:4px 0;cursor:pointer;min-width:56px}
+.tab-item.active{color:var(--primary)}
+.tab-icon{font-size:22px}
+
+/* Cards */
+.card{background:var(--card-bg);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin-bottom:16px}
+.header-card{background:linear-gradient(135deg,#6C5CE7,#A29BFE);color:#fff;padding:24px;border-radius:var(--radius);margin-bottom:16px}
+.countdown-days{font-size:56px;font-weight:700;line-height:1}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+.stat-card{background:var(--card-bg);padding:16px;border-radius:var(--radius);text-align:center;box-shadow:var(--shadow)}
+.stat-val{font-size:28px;font-weight:700;color:var(--primary)}
+.stat-label{font-size:12px;color:var(--text-light);margin-top:4px}
+
+/* Progress */
+.progress-bar{height:10px;background:rgba(255,255,255,0.25);border-radius:5px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;background:#fff;border-radius:5px;transition:width .3s}
+.progress-bar-dark{height:8px;background:#eee;border-radius:4px;overflow:hidden;margin:6px 0}
+.progress-fill-color{height:100%;border-radius:4px;transition:width .3s}
+
+/* Task List */
+.task-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--card-bg);border-radius:12px;margin-bottom:8px;box-shadow:var(--shadow);cursor:pointer}
+.task-left{display:flex;align-items:center;gap:12px}
+.task-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.task-info{flex:1;min-width:0}
+.task-q{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.task-meta{font-size:12px;color:var(--text-light);margin-top:2px}
+
+/* Buttons */
+.btn{display:block;text-align:center;padding:14px;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;border:none;margin:16px 0;transition:transform .1s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-outline{border:2px solid var(--primary);color:var(--primary);background:transparent}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-success{background:var(--success);color:#fff}
+
+/* Practice */
+.practice-card{background:var(--card-bg);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);text-align:center}
+.practice-q{font-size:18px;font-weight:600;margin:20px 0;line-height:1.6}
+.answer-box{background:#F5F3FF;padding:16px;border-radius:12px;margin:16px 0;text-align:left;border-left:4px solid var(--primary);white-space:pre-line;line-height:1.6}
+.action-row{display:flex;gap:12px}
+.action-row .btn{flex:1;margin:0}
+
+/* Flash Card */
+.flash-card{background:var(--card-bg);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);text-align:center}
+.card-subject{font-size:12px;padding:4px 12px;border-radius:20px;margin-bottom:16px;font-weight:600}
+.tag-zyk{background:#722ed1;color:#fff}
+.tag-yy{background:#0fc19c;color:#fff}
+.tag-default{background:var(--primary-light);color:#fff}
+.card-q{font-size:20px;font-weight:600;line-height:1.5;margin-bottom:20px}
+.card-a{font-size:15px;color:var(--text-light);line-height:1.6;display:none;white-space:pre-line}
+.card-a.show{display:block}
+.tap-hint{color:var(--text-light);font-size:13px;margin-top:20px}
+
+/* Filter */
+.filter-bar{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;white-space:nowrap}
+.filter-chip{padding:6px 16px;border-radius:20px;font-size:13px;background:var(--card-bg);color:var(--text-light);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.filter-chip.active{background:var(--primary);color:#fff}
+
+/* Cards List */
+.card-item{background:var(--card-bg);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.srs-badge{font-size:11px;color:var(--text-light);padding:2px 8px;background:#f5f5f5;border-radius:8px}
+.card-footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.card-meta{font-size:12px;color:var(--text-light)}
+.study-btn{font-size:13px;color:var(--primary);padding:6px 16px;border:1px solid var(--primary);border-radius:20px;cursor:pointer}
+
+/* Modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:flex-end;justify-content:center;z-index:200}
+.modal-content{background:#fff;width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:24px;max-height:80vh;overflow-y:auto}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.modal-close{font-size:28px;color:var(--text-light);cursor:pointer;line-height:1}
+.form-group{margin-bottom:16px}
+.form-label{font-size:14px;font-weight:600;margin-bottom:6px;display:block}
+.form-input{width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:10px;font-size:14px;outline:none;background:#f9f9f9}
+.form-textarea{width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:10px;font-size:14px;outline:none;min-height:80px;resize:vertical;background:#f9f9f9;font-family:inherit}
+
+/* Empty */
+.empty{text-align:center;padding:60px 20px}
+.empty-icon{font-size:56px}
+.empty-text{color:var(--text-light);margin:12px 0;font-size:15px}
+
+/* Timer */
+.timer{background:var(--card-bg);padding:16px;border-radius:var(--radius);text-align:center;margin-bottom:16px;box-shadow:var(--shadow)}
+.timer-text{font-size:36px;font-weight:700;color:var(--primary)}
+
+/* Chart */
+.bar-chart{display:flex;align-items:flex-end;justify-content:space-around;height:200px;gap:8px;padding-top:20px}
+.bar-col{display:flex;flex-direction:column;align-items:center;flex:1}
+.bar{width:100%;border-radius:6px 6px 0 0;background:var(--primary-light);min-height:4px}
+.bar-label{font-size:11px;color:var(--text-light);margin-top:6px}
+.bar-val{font-size:11px;color:var(--primary);font-weight:600;margin-bottom:4px}
+
+/* Bottom bar */
+.bottom-bar{position:fixed;bottom:72px;left:50%;transform:translateX(-50%);width:100%;max-width:480px;display:flex;gap:8px;padding:8px 16px;background:var(--bg);z-index:50}
+.bottom-btn{padding:12px 16px;border-radius:12px;font-size:13px;font-weight:600;text-align:center;cursor:pointer;background:var(--card-bg);box-shadow:var(--shadow);flex:1;transition:transform .1s}
+.bottom-btn:active{transform:scale(.97)}
+
+/* Overview Grid */
+.overview-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.overview-item{text-align:center;padding:12px}
+.overview-val{font-size:24px;font-weight:700;color:var(--primary)}
+.overview-unit{font-size:12px;color:var(--text-light)}
+.overview-label{font-size:12px;color:var(--text-light);margin-top:2px}
+
+.section-title{font-size:16px;font-weight:700;margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<!-- Tab Bar -->
+<div class="tabbar" id="tabbar">
+  <div class="tab-item active" data-page="today"><span class="tab-icon">🏠</span>首页</div>
+  <div class="tab-item" data-page="cards"><span class="tab-icon">📚</span>题库</div>
+  <div class="tab-item" data-page="practice"><span class="tab-icon">✍️</span>刷题</div>
+  <div class="tab-item" data-page="wrong"><span class="tab-icon">📝</span>错题</div>
+  <div class="tab-item" data-page="stats"><span class="tab-icon">📊</span>我的</div>
+</div>
+
+<!-- Page: Today -->
+<div class="page active" id="page-today"></div>
+
+<!-- Page: Cards -->
+<div class="page" id="page-cards"></div>
+
+<!-- Page: Practice -->
+<div class="page" id="page-practice"></div>
+
+<!-- Page: Wrong -->
+<div class="page" id="page-wrong"></div>
+
+<!-- Page: Stats -->
+<div class="page" id="page-stats"></div>
+
+<!-- Page: Study -->
+<div class="page" id="page-study"></div>
+
+<!-- Page: Exam -->
+<div class="page" id="page-exam"></div>
+
+<!-- Page: ExamResult -->
+<div class="page" id="page-exam-result"></div>
+
+<!-- Page: Upload -->
+<div class="page" id="page-upload"></div>
+
+<!-- Page: Login -->
+<div class="page" id="page-login"></div>
+
+<!-- Modal Container -->
+<div id="modal-root"></div>
+
+<script>
+// ========== Supabase Config ==========
+// 在 Supabase 项目 Settings → API 中获取 URL 与 anon public key 并填入以下变量
+const SUPABASE_URL = 'https://fjssiuxlregefvppfjyy.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqc3NpdXhscmVnZWZ2cHBmanl5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1Nzk0NzAsImV4cCI6MjA5NjE1NTQ3MH0.8A5jaKTF0XUHOZqu3KG4qAAflcZBEJUEas5KhqpKD0Q'; // 请在此处填写 Supabase anon 公钥
+
+// 初始化 Supabase 客户端
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// 本地缓存变量（与之前保持一致）
+let cards = [], records = [];
+
+// ========== Supabase 数据操作 ==========
+async function loadFromSupabase(){
+  // 加载卡片
+  const {data: cardData, error: cardErr} = await supabaseClient.from('cards').select('*');
+  if(cardErr){console.error('加载卡片出错', cardErr); cards = [];}
+  else {cards = cardData;}
+  // 加载记录
+  const {data: recData, error: recErr} = await supabaseClient.from('records').select('*');
+  if(recErr){console.error('加载记录出错', recErr); records = [];}
+  else {records = recData;}
+  // 本地存储备份（防止离线使用）
+  localStorage.setItem('mmll_cards', JSON.stringify(cards));
+  localStorage.setItem('mmll_records', JSON.stringify(records));
+  renderApp();
+}
+
+async function saveCardsToSupabase(c){
+  cards = c;
+  // 本地备份
+  localStorage.setItem('mmll_cards', JSON.stringify(cards));
+  // 覆盖写入 Supabase（先删后插）
+  const {error: delErr} = await supabase.from('cards').delete().neq('id','0');
+  if(delErr) console.error('删除旧卡片失败', delErr);
+  const {error: insErr} = await supabase.from('cards').insert(cards);
+  if(insErr) console.error('插入卡片失败', insErr);
+}
+
+async function saveRecordsToSupabase(r){
+  records = r;
+  localStorage.setItem('mmll_records', JSON.stringify(records));
+  const {error: delErr} = await supabase.from('records').delete().neq('id','0');
+  if(delErr) console.error('删除旧记录失败', delErr);
+  const {error: insErr} = await supabase.from('records').insert(records);
+  if(insErr) console.error('插入记录失败', insErr);
+}
+
+// 将原有的 initLeanCloud 替换为初始化 Supabase
+async function initSupabase(){
+  try{
+    await loadFromSupabase();
+    console.log('Supabase 已连接');
+  }catch(e){
+    console.error('Supabase 初始化失败', e);
+    // 回退到本地存储模式
+    loadFromLocal();
+  }
+}
+
+// ========== 本地存储（备用）==========
+const CARDS_KEY = 'mmll_cards', RECORDS_KEY = 'mmll_records';
+function loadFromLocal(){
+  try{cards = JSON.parse(localStorage.getItem(CARDS_KEY)||'[]')}catch{cards=[]}
+  try{records = JSON.parse(localStorage.getItem(RECORDS_KEY)||'[]')}catch{records=[]}
+  if(cards.length===0){cards=mockCards;saveCardsToSupabase(cards)}
+  renderApp();
+}
+function saveToLocal(){
+  localStorage.setItem(CARDS_KEY,JSON.stringify(cards));
+  localStorage.setItem(RECORDS_KEY,JSON.stringify(records));
+}
+
+// ========== 云端存储 ==========
+async function loadFromCloud(){
+  try{
+    // 查询卡片
+    const cardQuery = new AV.Query(CARD_CLASS);
+    cardQuery.equalTo('userId', currentUser.id);
+    const cardResults = await cardQuery.find();
+    if(cardResults.length > 0){
+      cards = cardResults.map(c => ({
+        id: c.id, question: c.get('question'), answer: c.get('answer'),
+        subject: c.get('subject'), tag: c.get('tag'), srsLevel: c.get('srsLevel') || 1,
+        nextReview: c.get('nextReview'), successCount: c.get('successCount') || 0,
+        failCount: c.get('failCount') || 0
+      }));
+    }else if(cards.length===0){
+      cards = mockCards;
+    }
+    
+    // 查询记录
+    const recQuery = new AV.Query(RECORD_CLASS);
+    recQuery.equalTo('userId', currentUser.id);
+    const recResults = await recQuery.find();
+    records = recResults.map(r => ({
+      id: r.id, cardId: r.get('cardId'), isCorrect: r.get('isCorrect'),
+      subject: r.get('subject'), createdAt: r.get('createdAt')
+    }));
+    
+    saveToLocal();
+    renderApp();
+  }catch(e){
+    console.log('加载云端数据失败', e);
+    loadFromLocal();
+  }
+}
+
+async function saveCardsToSupabase(c){
+  cards = c;
+  saveToLocal();
+  if(!lcInitialized) return;
+  
+  // 同步到云端
+  try{
+    const query = new AV.Query(CARD_CLASS);
+    query.equalTo('userId', currentUser.id);
+    const existing = await query.find();
+    
+    // 删除旧数据
+    await AV.Object.destroyAll(existing);
+    
+    // 保存新数据
+    const toSave = cards.map(card => {
+      const obj = new AV.Object(CARD_CLASS);
+      obj.set('userId', currentUser.id);
+      obj.set('question', card.question);
+      obj.set('answer', card.answer);
+      obj.set('subject', card.subject);
+      obj.set('tag', card.tag);
+      obj.set('srsLevel', card.srsLevel || 1);
+      obj.set('nextReview', card.nextReview);
+      obj.set('successCount', card.successCount || 0);
+      obj.set('failCount', card.failCount || 0);
+      return obj;
+    });
+    
+    await AV.Object.saveAll(toSave);
+    console.log('卡片已同步到云端');
+  }catch(e){
+    console.log('同步卡片失败', e);
+  }
+}
+
+async function saveRecordsToSupabase(r){
+  records = r;
+  saveToLocal();
+  if(!lcInitialized) return;
+  
+  try{
+    const query = new AV.Query(RECORD_CLASS);
+    query.equalTo('userId', currentUser.id);
+    const existing = await query.find();
+    await AV.Object.destroyAll(existing);
+    
+    const toSave = records.map(rec => {
+      const obj = new AV.Object(RECORD_CLASS);
+      obj.set('userId', currentUser.id);
+      obj.set('cardId', rec.cardId);
+      obj.set('isCorrect', rec.isCorrect);
+      obj.set('subject', rec.subject);
+      obj.set('createdAt', rec.createdAt);
+      return obj;
+    });
+    
+    await AV.Object.saveAll(toSave);
+    console.log('记录已同步到云端');
+  }catch(e){
+    console.log('同步记录失败', e);
+  }
+}
+
+// 启动应用
+
+const mockCards = [
+  {id:'1',question:'简述糖异生的生理意义',answer:'1. 维持血糖恒定\n2. 补充肝糖原储备\n3. 调节酸碱平衡\n4. 协助氨基酸代谢',subject:'专业课',tag:'生物化学',srsLevel:2,nextReview:'2026-06-04',successCount:5,failCount:1},
+  {id:'2',question:'What is the main theme of the passage?',answer:'The passage mainly discusses the importance of time management in modern life and its impact on productivity.',subject:'英语',tag:'阅读理解',srsLevel:3,nextReview:'2026-06-03',successCount:8,failCount:2},
+  {id:'3',question:'唯物辩证法的基本规律有哪些？',answer:'对立统一规律、质量互变规律、否定之否定规律',subject:'政治',tag:'马克思主义基本原理',srsLevel:1,nextReview:'2026-06-05',successCount:3,failCount:0},
+  {id:'4',question:'简述心肌梗死的临床表现',answer:'1. 持续性胸痛\n2. 心悸、气促\n3. 可伴恶心、呕吐\n4. 心律失常',subject:'专业课',tag:'内科学',srsLevel:2,nextReview:'2026-06-03',successCount:6,failCount:1},
+  {id:'5',question:'"经济下行"在第三段中指的是什么？',answer:'指经济活动减少和GDP增速下降的时期。',subject:'英语',tag:'阅读理解',srsLevel:4,nextReview:'2026-06-06',successCount:10,failCount:3},
+  {id:'6',question:'资本主义生产方式的基本矛盾是？',answer:'生产社会化与生产资料私人占有之间的矛盾',subject:'政治',tag:'政治经济学',srsLevel:1,nextReview:'2026-06-04',successCount:2,failCount:1},
+]
+
+initSupabase();
+
+// ========== Router ==========
+function renderApp(){
+  // 显示首页
+  goPage('today');
+}
+
+let currentPage = 'today'
+let studyState = {index:0,showAnswer:false,successCount:0,failCount:0,userAnswer:''}
+let practiceState = {index:0,showAnswer:false,correct:0,wrongIds:[],userAnswer:''}
+let examState = {timeLeft:1800,index:0,showAnswer:false,correct:0,timer:null}
+
+function goPage(page,data){
+  currentPage=page
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
+  document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'))
+  const el=document.getElementById('page-'+page)
+  if(el)el.classList.add('active')
+  const tab=document.querySelector(`[data-page="${page}"]`)
+  if(tab)tab.classList.add('active')
+  window.scrollTo(0,0)
+  render(page,data)
+}
+
+// ========== Render ==========
+function render(page,data){
+  switch(page){
+    case 'today':renderToday();break
+    case 'cards':renderCards();break
+    case 'practice':renderPractice();break
+    case 'wrong':renderWrong();break
+    case 'stats':renderStats();break
+    case 'study':renderStudy(data);break
+    case 'exam':renderExam(data);break
+    case 'exam-result':renderExamResult(data);break
+    case 'upload':renderUpload();break
+  }
+}
+
+function h(tag,attrs,...children){
+  const el=document.createElement(tag)
+  for(const[k,v]of Object.entries(attrs||{})){
+    if(k==='className')el.className=v
+    else if(k.startsWith('on'))el.addEventListener(k.slice(2).toLowerCase(),v)
+    else if(k==='style')Object.assign(el.style,v)
+    else el.setAttribute(k,v)
+  }
+  for(const c of children){
+    if(typeof c==='string')el.appendChild(document.createTextNode(c))
+    else if(c instanceof Node)el.appendChild(c)
+    else if(Array.isArray(c))c.forEach(cc=>el.appendChild(typeof cc==='string'?document.createTextNode(cc):cc))
+  }
+  return el
+}
+
+// ========== Today Page ==========
+function renderToday(){
+  const now=new Date(), examDate=new Date(now.getFullYear(),11,21)
+  const diff=Math.max(0,examDate-now),days=Math.floor(diff/86400000)
+  const dueCards=cards.filter(c=>new Date(c.nextReview)<=now).slice(0,10)
+  const learned=cards.filter(c=>c.successCount>0).length
+  const pct=cards.length?Math.round(learned/cards.length*100):0
+  const todayRecords=records.filter(r=>r.createdAt?.startsWith(now.toISOString().slice(0,10)))
+  const todayLearned=todayRecords.length
+
+  const getIcon=s=>{if(s==='专业课')return['📚','#722ed1'];if(s==='英语')return['📖','#0fc19c'];return['📝','#165dff']}
+  const subjectStats=()=>{const ss=['专业课','英语','政治'];return ss.map(n=>{const sc=cards.filter(c=>c.subject===n);return{name:n,total:sc.length,learned:sc.filter(c=>c.successCount>0).length}})}
+
+  document.getElementById('page-today').innerHTML=''
+  document.getElementById('page-today').appendChild(
+    h('div',{},
+      h('div',{className:'header-card'},
+        h('div',{style:{textAlign:'center'}},h('div',{},h('span',{},'距离考研还有'))),
+        h('div',{className:'countdown-days',style:{textAlign:'center',margin:'8px 0'}},String(days)),
+        h('div',{style:{textAlign:'center',fontSize:'13px'}},examDate.getFullYear()+'年12月21日'),
+        h('div',{style:{marginTop:'20px'}},
+          h('div',{style:{fontSize:'13px',marginBottom:'4px'}},'总体学习进度'),
+          h('div',{className:'progress-bar'},h('div',{className:'progress-fill',style:{width:pct+'%'}})),
+          h('div',{style:{fontSize:'12px',marginTop:'4px'}},`已学习 ${learned}/${cards.length} 张卡片 (${pct}%)`)
+        )
+      ),
+      h('div',{className:'stats-grid'},
+        h('div',{className:'stat-card'},h('div',{className:'stat-val'},String(dueCards.length)),h('div',{className:'stat-label'},'今日待复习')),
+        h('div',{className:'stat-card'},h('div',{className:'stat-val'},String(todayLearned)),h('div',{className:'stat-label'},'今日已学')),
+        h('div',{className:'stat-card'},h('div',{className:'stat-val'},String(cards.length)),h('div',{className:'stat-label'},'总卡片'))
+      ),
+      h('div',{className:'card'},
+        h('div',{style:{fontSize:'15px',fontWeight:700,marginBottom:'12px'}},'📅 SRS 今日到期 ('+dueCards.length+'张)'),
+        dueCards.length>0
+          ? dueCards.map(c=>{
+              const[icon,bg]=getIcon(c.subject)
+              return h('div',{className:'task-item',onClick:()=>goPage('study',{cards:dueCards,index:0})},
+                h('div',{className:'task-left'},
+                  h('div',{className:'task-icon',style:{background:bg+'22'}},icon),
+                  h('div',{className:'task-info'},h('div',{className:'task-q'},c.question),h('div',{className:'task-meta'},c.subject+' · '+c.tag+' · Lv.'+c.srsLevel))
+                ),
+                h('span',{},'›')
+              )
+            })
+          : h('div',{className:'empty'},h('div',{className:'empty-icon'},'🎉'),h('div',{className:'empty-text'},'太棒了！今日没有待复习卡片'))
+      ),
+      h('div',{className:'btn btn-primary',onClick:()=>{
+        const due=cards.filter(c=>new Date(c.nextReview)<=new Date()).slice(0,10)
+        if(due.length>0)goPage('study',{cards:due,index:0})
+        else goPage('cards')
+      }},dueCards.length>0?'开始今日学习':'去资料库添加卡片')
+    )
+  )
+}
+
+// ========== Cards Page ==========
+function renderCards(filterSubj,filterTag){
+  if(!filterSubj)filterSubj='全部'
+  if(!filterTag)filterTag='全部'
+  const subjects=['全部','专业课','英语','政治']
+  // 获取所有标签，包括空标签的卡片数量
+  const tagMap={}
+  cards.forEach(c=>{if(c.tag){tagMap[c.tag]=(tagMap[c.tag]||0)+1}})
+  const allTags=['全部',...Object.keys(tagMap).sort()]
+  let filtered=filterSubj==='全部'?cards:cards.filter(c=>c.subject===filterSubj)
+  filtered=filterTag==='全部'?filtered:filtered.filter(c=>c.tag===filterTag)
+  const getTag=s=>{if(s==='政治')return'tag-zyk';if(s==='英语')return'tag-yy';return'tag-default'}
+
+  document.getElementById('page-cards').innerHTML=''
+  document.getElementById('page-cards').appendChild(
+    h('div',{},
+      h('div',{className:'filter-bar'},
+        subjects.map(s=>h('div',{className:'filter-chip'+(filterSubj===s?' active':''),onClick:()=>renderCards(s,filterTag)},s))
+      ),
+      allTags.length>1?h('div',{className:'filter-bar',style:{marginTop:'8px',flexWrap:'wrap'}},
+        allTags.map(t=>h('div',{className:'filter-chip'+(filterTag===t?' active':''),onClick:()=>renderCards(filterSubj,t),style:{fontSize:'12px'}},t+(t!=='全部'?' ('+(tagMap[t]||0)+')':'')))
+      ):null,
+      filtered.length>0
+        ? h('div',{},...filtered.map(c=>h('div',{className:'card-item'},
+            h('div',{className:'card-header'},
+              h('span',{className:'card-subject '+getTag(c.subject)},c.subject),
+              h('span',{className:'srs-badge'},'SRS Lv.'+c.srsLevel)
+            ),
+            h('div',{style:{fontSize:'15px',fontWeight:600,marginBottom:'8px'}},c.question),
+            h('div',{style:{fontSize:'13px',color:'#666',whiteSpace:'pre-line',lineHeight:1.5}},c.answer.slice(0,80)+(c.answer.length>80?'...':'')),
+            h('div',{className:'card-footer'},
+              h('span',{className:'card-meta'},(c.tag||'无标签')+' · 成功'+c.successCount+'次/失败'+c.failCount+'次'),
+              h('div',{style:{display:'flex',gap:'6px',flexWrap:'wrap',marginTop:'8px'}},
+                h('span',{className:'study-btn',style:{flex:1,minWidth:'70px',textAlign:'center'},onClick:()=>goPage('study',{cards:[c],index:0})},'学习'),
+                h('span',{className:'study-btn',style:{flex:1,minWidth:'70px',textAlign:'center',background:'#fff3e0',color:'#ff9800',border:'none'},onClick:()=>showEditModal(c)},'编辑'),
+                h('span',{className:'study-btn',style:{flex:1,minWidth:'70px',textAlign:'center',background:'#fee',color:'var(--danger)',border:'none'},onClick:()=>deleteCard(c.id)},'删除')
+              )
+            )
+          )))
+        : h('div',{className:'empty'},h('div',{className:'empty-icon'},'📚'),h('div',{className:'empty-text'},'暂无卡片'),h('div',{className:'btn btn-primary',onClick:showAddModal},'添加第一张卡片'))
+      ,
+      h('div',{className:'bottom-bar'},
+        h('div',{className:'bottom-btn',onClick:()=>goPage('upload')},'📥 导入JSON'),
+        h('div',{className:'bottom-btn',onClick:()=>goPage('exam',{cards})},'📝 模拟考试'),
+        h('div',{className:'bottom-btn',style:{background:'var(--primary)',color:'#fff'},onClick:showAddModal},'+ 添加卡片')
+      )
+    )
+  )
+}
+
+function showAddModal(){
+  const root=document.getElementById('modal-root')
+  let q='',a='',subj='专业课',tag=''
+  root.innerHTML=''
+  root.appendChild(
+    h('div',{className:'modal',onClick:()=>root.innerHTML=''},
+      h('div',{className:'modal-content',onClick:e=>e.stopPropagation()},
+        h('div',{className:'modal-header'},
+          h('div',{style:{fontSize:'18px',fontWeight:700}},'添加卡片'),
+          h('div',{className:'modal-close',onClick:()=>root.innerHTML=''},'×')
+        ),
+        h('div',{className:'form-group'},h('label',{className:'form-label'},'问题'),h('textarea',{className:'form-textarea',placeholder:'请输入问题/题目',onInput:e=>q=e.target.value})),
+        h('div',{className:'form-group'},h('label',{className:'form-label'},'答案'),h('textarea',{className:'form-textarea',placeholder:'请输入答案',onInput:e=>a=e.target.value})),
+        h('div',{className:'form-group'},
+          h('label',{className:'form-label'},'科目'),
+          h('div',{className:'filter-bar'},...['专业课','英语','政治'].map(s=>h('div',{className:'filter-chip'+(subj===s?' active':''),onClick:()=>{subj=s;root.innerHTML='';showAddModalWithData(q,a,subj,tag)}},s)))
+        ),
+        h('div',{className:'form-group'},
+          h('label',{className:'form-label'},'标签（可选）'),
+          h('input',{className:'form-input',placeholder:'如：生理学、病理学...',value:tag,onInput:e=>tag=e.target.value})
+        ),
+        h('div',{className:'btn btn-primary',onClick:()=>{
+          if(!q.trim())return alert('请输入问题')
+          if(!a.trim())return alert('请输入答案')
+          cards=[{id:String(Date.now()),question:q.trim(),answer:a.trim(),subject:subj,tag:tag.trim(),srsLevel:1,nextReview:new Date().toISOString().slice(0,10),successCount:0,failCount:0},...cards]
+          saveCardsToSupabase(cards)
+          root.innerHTML=''
+          renderCards()
+        }},'保存卡片')
+      )
+    )
+  )
+}
+
+function showAddModalWithData(q,a,subj,tag){
+  const root=document.getElementById('modal-root')
+  root.innerHTML=''
+  root.appendChild(
+    h('div',{className:'modal',onClick:()=>root.innerHTML=''},
+      h('div',{className:'modal-content',onClick:e=>e.stopPropagation()},
+        h('div',{className:'modal-header'},
+          h('div',{style:{fontSize:'18px',fontWeight:700}},'添加卡片'),
+          h('div',{className:'modal-close',onClick:()=>root.innerHTML=''},'×')
+        ),
+        h('div',{className:'form-group'},h('label',{className:'form-label'},'问题'),h('textarea',{className:'form-textarea',placeholder:'请输入问题/题目',value:q,onInput:e=>q=e.target.value})),
+        h('div',{className:'form-group'},h('label',{className:'form-label'},'答案'),h('textarea',{className:'form-textarea',placeholder:'请输入答案',value:a,onInput:e=>a=e.target.value})),
+        h('div',{className:'form-group'},
+          h('label',{className:'form-label'},'科目'),
+          h('div',{className:'filter-bar'},...['专业课','英语','政治'].map(s=>h('div',{className:'filter-chip'+(subj===s?' active':''),onClick:()=>{subj=s;root.innerHTML='';showAddModalWithData(q,a,subj,tag)}},s)))
+        ),
+        h('div',{className:'form-group'},
+          h('label',{className:'form-label'},'标签（可选）'),
+          h('input',{className:'form-input',placeholder:'如：生理学、病理学...',value:tag,onInput:e=>tag=e.target.value})
+        ),
+        h('div',{className:'btn btn-primary',onClick:()=>{
+          if(!q.trim())return alert('请输入问题')
+          if(!a.trim())return alert('请输入答案')
+          cards=[{id:String(Date.now()),question:q.trim(),answer:a.trim(),subject:subj,tag:tag.trim(),srsLevel:1,nextReview:new Date().toISOString().slice(0,10),successCount:0,failCount:0},...cards]
+          saveCardsToSupabase(cards)
+          root.innerHTML=''
+          renderCards()
+        }},'保存卡片')
+      )
+    )
+  )
+}
+
+function showEditModal(card){
+  const root=document.getElementById('modal-root')
+  let q=card.question,a=card.answer,subj=card.subject,tag=card.tag||''
+  root.innerHTML=''
+  root.appendChild(
+    h('div',{className:'modal',onClick:()=>root.innerHTML=''},
+      h('div',{className:'modal-content',onClick:e=>e.stopPropagation()},
+        h('div',{className:'modal-header'},
+          h('div',{style:{fontSize:'18px',fontWeight:700}},'编辑卡片'),
+          h('div',{className:'modal-close',onClick:()=>root.innerHTML=''},'×')
+        ),
+        h('div',{className:'form-group'},h('label',{className:'form-label'},'问题'),h('textarea',{className:'form-textarea',placeholder:'请输入问题/题目',value:q,onInput:e=>q=e.target.value})),
+        h('div',{className:'form-group'},h('label',{className:'form-label'},'答案'),h('textarea',{className:'form-textarea',placeholder:'请输入答案',value:a,onInput:e=>a=e.target.value})),
+        h('div',{className:'form-group'},
+          h('label',{className:'form-label'},'科目'),
+          h('div',{className:'filter-bar'},...['专业课','英语','政治'].map(s=>h('div',{className:'filter-chip'+(subj===s?' active':''),onClick:()=>{subj=s;root.innerHTML='';showEditModal({...card,subject:subj})}},s)))
+        ),
+        h('div',{className:'form-group'},
+          h('label',{className:'form-label'},'标签（可选）'),
+          h('input',{className:'form-input',placeholder:'如：生理学、病理学...',value:tag,onInput:e=>tag=e.target.value})
+        ),
+        h('div',{className:'btn btn-primary',onClick:()=>{
+          if(!q.trim())return alert('请输入问题')
+          if(!a.trim())return alert('请输入答案')
+          cards=cards.map(c=>c.id===card.id?{...c,question:q.trim(),answer:a.trim(),subject:subj,tag:tag.trim()}:c)
+          saveCards(cards)
+          root.innerHTML=''
+          renderCards()
+        }},'保存修改')
+      )
+    )
+  )
+}
+
+function deleteCard(id){
+  if(!confirm('确定要删除这张卡片吗？'))return
+  cards=cards.filter(c=>c.id!==id)
+  saveCards(cards)
+  renderCards()
+}
+
+// ========== Practice Page ==========
+function renderPractice(){
+  document.getElementById('page-practice').innerHTML=''
+  if(practiceState.index >= cards.length){
+    const rate=cards.length>0?Math.round(practiceState.correct/cards.length*100):0
+    document.getElementById('page-practice').appendChild(
+      h('div',{className:'card',style:{textAlign:'center',padding:'60px 20px'}},
+        h('div',{style:{fontSize:'56px',marginBottom:'16px'}},'🎉'),
+        h('div',{style:{fontSize:'22px',fontWeight:700,marginBottom:'8px'}},'完成！正确率 '+rate+'%'),
+        h('div',{style:{color:'#666',marginBottom:'8px'}},'错题 '+practiceState.wrongIds.length+' 道，已自动收入错题本'),
+        h('div',{className:'btn btn-primary',onClick:()=>{practiceState={index:0,showAnswer:false,correct:0,wrongIds:[],userAnswer:''};renderPractice()}},'重新开始')
+      )
+    )
+    return
+  }
+  const c=cards[practiceState.index]
+  document.getElementById('page-practice').appendChild(
+    h('div',{},
+      h('div',{style:{textAlign:'center',marginBottom:'12px',color:'#666',fontSize:'13px'}},'题目 '+(practiceState.index+1)+'/'+cards.length),
+      h('div',{className:'practice-card'},
+        h('div',{style:{fontSize:'32px',marginBottom:'12px'}},'📝'),
+        h('div',{className:'practice-q'},c.question),
+        practiceState.showAnswer
+          ? h('div',{},
+              practiceState.userAnswer?h('div',{style:{background:'#fff3e0',padding:'12px',borderRadius:'10px',marginBottom:'10px',fontSize:'14px',lineHeight:1.5,borderLeft:'4px solid #ff9800'}},
+                h('div',{style:{fontSize:'12px',color:'#e65100',fontWeight:600,marginBottom:'4px'}},'你的答案：'),
+                h('div',{style:{whiteSpace:'pre-line'}},practiceState.userAnswer)
+              ):null,
+              h('div',{className:'answer-box'},c.answer)
+            )
+          : h('textarea',{
+              className:'form-textarea',
+              placeholder:'请输入你的答案...',
+              value:practiceState.userAnswer,
+              style:{minHeight:'120px',marginTop:'12px',border:'2px solid var(--primary-light)'},
+              onInput:e=>{practiceState.userAnswer=e.target.value}
+            }),
+        h('div',{className:'action-row',style:{marginTop:'16px'}},
+          !practiceState.showAnswer
+            ? h('div',{className:'btn btn-primary',onClick:()=>{
+                practiceState.showAnswer=true;renderPractice()
+              }},'提交答案')
+            : [
+                h('div',{className:'btn btn-outline',style:{borderColor:'#ff9800',color:'#ff9800'},onClick:()=>{
+                  practiceState.wrongIds.push(c.id)
+                  records=[...records,{id:Date.now()+'_'+Math.random().toString(36).slice(2,8),cardId:c.id,isCorrect:false,subject:c.subject,createdAt:new Date().toISOString()}]
+                  saveRecordsToSupabase(records)
+                  practiceState.index++;practiceState.showAnswer=false;practiceState.userAnswer='';renderPractice()
+                }},'💪 继续加油'),
+                h('div',{className:'btn btn-primary',onClick:()=>{
+                  practiceState.correct++
+                  records=[...records,{id:Date.now()+'_'+Math.random().toString(36).slice(2,8),cardId:c.id,isCorrect:true,subject:c.subject,createdAt:new Date().toISOString()}]
+                  saveRecords(records)
+                  practiceState.index++;practiceState.showAnswer=false;practiceState.userAnswer='';renderPractice()
+                }},'🎉 答得漂亮！')
+              ]
+        )
+      )
+    )
+  )
+}
+
+// ========== Study Page ==========
+function renderStudy(data){
+  const studyCards=(data&&data.cards)||cards
+  if(data)studyState={index:data.index||0,showAnswer:false,successCount:0,failCount:0,userAnswer:''}
+  const getTag=s=>{if(s==='政治')return'tag-zyk';if(s==='英语')return'tag-yy';return'tag-default'}
+  document.getElementById('page-study').innerHTML=''
+
+  if(studyState.index >= studyCards.length){
+    document.getElementById('page-study').appendChild(
+      h('div',{className:'card',style:{textAlign:'center',padding:'50px 20px'}},
+        h('div',{style:{fontSize:'56px'}},'🎉'),
+        h('div',{style:{fontSize:'22px',fontWeight:700,margin:'12px 0'}},'学习完成！'),
+        h('div',{style:{color:'#666',marginBottom:'16px'}},'已完成全部 '+studyCards.length+' 张卡片'),
+        h('div',{style:{display:'flex',gap:'40px',justifyContent:'center',marginBottom:'16px'}},
+          h('div',{},h('div',{style:{fontSize:'28px',fontWeight:700,color:'var(--success)'}},String(studyState.successCount)),h('div',{style:{fontSize:'12px',color:'#666'}},'记住了')),
+          h('div',{},h('div',{style:{fontSize:'28px',fontWeight:700,color:'var(--danger)'}},String(studyState.failCount)),h('div',{style:{fontSize:'12px',color:'#666'}},'没记住'))
+        ),
+        h('div',{className:'btn btn-primary',onClick:()=>{studyState={index:0,showAnswer:false,successCount:0,failCount:0,userAnswer:''};goPage('today')}},'返回首页')
+      )
+    )
+    return
+  }
+
+  const c=studyCards[studyState.index]
+  document.getElementById('page-study').appendChild(
+    h('div',{},
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'16px'}},
+        h('div',{style:{flex:1}},
+          h('div',{style:{fontSize:'13px',marginBottom:'4px'},},(studyState.index+1)+' / '+studyCards.length),
+          h('div',{className:'progress-bar-dark'},h('div',{className:'progress-fill-color',style:{width:((studyState.index+1)/studyCards.length*100)+'%',background:'var(--primary)'}}))
+        ),
+        h('span',{style:{fontSize:'12px',color:'#666',marginLeft:'12px'}},'SRS Lv.'+c.srsLevel)
+      ),
+      h('div',{className:'flash-card'},
+        h('span',{className:'card-subject '+getTag(c.subject)},c.subject),
+        h('div',{style:{fontSize:'32px',marginBottom:'12px',textAlign:'center'}},'📝'),
+        h('div',{className:'card-q'},c.question),
+        studyState.showAnswer?h('div',{},
+          studyState.userAnswer?h('div',{style:{background:'#fff3e0',padding:'12px',borderRadius:'10px',marginBottom:'10px',fontSize:'14px',lineHeight:1.5,borderLeft:'4px solid #ff9800'}},
+            h('div',{style:{fontSize:'12px',color:'#e65100',fontWeight:600,marginBottom:'4px'}},'你的答案：'),
+            h('div',{style:{whiteSpace:'pre-line'}},studyState.userAnswer)
+          ):h('div',{style:{background:'#fff3e0',padding:'12px',borderRadius:'10px',marginBottom:'10px',fontSize:'14px',lineHeight:1.5,borderLeft:'4px solid #ff9800',textAlign:'center'}},
+            h('div',{style:{fontSize:'12px',color:'#e65100',fontWeight:600,marginBottom:'4px'}},'你的答案：'),
+            h('div',{style:{whiteSpace:'pre-line',color:'#999'}},'(未作答)')
+          ),
+          h('div',{className:'answer-box'},c.answer)
+        ):h('textarea',{
+          className:'form-textarea',
+          placeholder:'请输入你的答案...',
+          style:{minHeight:'120px',marginTop:'12px',border:'2px solid var(--primary-light)'},
+          value:studyState.userAnswer,
+          onInput:e=>studyState.userAnswer=e.target.value
+        })
+      ),
+      h('div',{className:'action-row',style:{marginTop:'16px'}},
+        !studyState.showAnswer
+          ? h('div',{className:'btn btn-primary',onClick:()=>{
+              studyState.showAnswer=true;renderStudy()
+            }},'提交答案')
+          : [
+              h('div',{className:'btn btn-outline',style:{borderColor:'#ff9800',color:'#ff9800'},onClick:()=>{
+                studyState.failCount++
+                records=[...records,{id:Date.now()+'_'+Math.random().toString(36).slice(2,8),cardId:c.id,isCorrect:false,subject:c.subject,createdAt:new Date().toISOString()}]
+                saveRecords(records)
+                studyState.index++;studyState.showAnswer=false;studyState.userAnswer='';renderStudy()
+              }},'💪 继续加油'),
+              h('div',{className:'btn btn-primary',onClick:()=>{
+                studyState.successCount++
+                records=[...records,{id:Date.now()+'_'+Math.random().toString(36).slice(2,8),cardId:c.id,isCorrect:true,subject:c.subject,createdAt:new Date().toISOString()}]
+                saveRecords(records)
+                studyState.index++;studyState.showAnswer=false;studyState.userAnswer='';renderStudy()
+              }},'🎉 答得漂亮！')
+            ]
+      ),
+      h('div',{style:{display:'flex',justifyContent:'space-around',fontSize:'12px',color:'#666',padding:'12px',background:'#f9f9f9',borderRadius:'12px'}},
+        h('div',{},h('div',{style:{fontWeight:700,color:'#333'}},String(c.successCount)),h('div',{},'成功次数')),
+        h('div',{},h('div',{style:{fontWeight:700,color:'#333'}},String(c.failCount)),h('div',{},'失败次数')),
+        h('div',{},h('div',{style:{fontWeight:700,color:'#333'}},c.tag||'--'),h('div',{},'标签'))
+      )
+    )
+  )
+}
+
+// ========== Wrong Book Page ==========
+function renderWrong(filterTag){
+  if(!filterTag)filterTag='全部'
+  const wrongRecs=records.filter(r=>!r.isCorrect)
+  let wrongCards=wrongRecs.map(r=>cards.find(c=>c.id===r.cardId)).filter(Boolean)
+  const allTags=['全部',...new Set(wrongCards.map(c=>c.tag).filter(Boolean))]
+  if(filterTag!=='全部')wrongCards=wrongCards.filter(c=>c.tag===filterTag)
+  document.getElementById('page-wrong').innerHTML=''
+  if(wrongCards.length===0){
+    document.getElementById('page-wrong').appendChild(
+      h('div',{className:'empty'},h('div',{className:'empty-icon'},'📚'),h('div',{className:'empty-text'},'暂无错题记录'),h('div',{className:'empty-text'},'做完练习后错题会自动收集'))
+    )
+  }else{
+    document.getElementById('page-wrong').appendChild(
+      h('div',{},
+        allTags.length>1?h('div',{className:'filter-bar',style:{marginBottom:'12px'}},
+          allTags.map(t=>h('div',{className:'filter-chip'+(filterTag===t?' active':''),onClick:()=>renderWrong(t),style:{fontSize:'12px'}},t))
+        ):null,
+        ...wrongCards.map((c,i)=>
+          h('div',{className:'card-item',key:i},
+            h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px'}},
+              h('span',{style:{fontSize:'13px',color:'var(--primary)',fontWeight:600}},c.subject),
+              c.tag?h('span',{style:{fontSize:'11px',background:'#f0f0f0',padding:'2px 8px',borderRadius:'4px'}},c.tag):null
+            ),
+            h('div',{style:{fontSize:'15px',fontWeight:600,marginBottom:'8px'}},c.question),
+            h('div',{style:{fontSize:'13px',color:'#666',whiteSpace:'pre-line',lineHeight:1.5,marginBottom:'12px'}},c.answer),
+            h('div',{style:{display:'flex',gap:'8px'}},
+              h('span',{className:'study-btn',onClick:()=>goPage('study',{cards:[c],index:0})},'再次学习'),
+              h('span',{className:'study-btn',style:{background:'#fee',color:'var(--danger)',border:'none'},onClick:()=>removeFromWrong(c.id)},'移除')
+            )
+          )
+        )
+      )
+    )
+  }
+}
+
+function removeFromWrong(cardId){
+  const root=document.getElementById('modal-root')
+  root.innerHTML=''
+  root.appendChild(
+    h('div',{className:'modal',onClick:()=>root.innerHTML=''},
+      h('div',{className:'modal-content',onClick:e=>e.stopPropagation(),style:{maxWidth:'300px'}},
+        h('div',{style:{fontSize:'24px',textAlign:'center',marginBottom:'12px'}},'⚠️'),
+        h('div',{style:{fontSize:'16px',fontWeight:600,textAlign:'center',marginBottom:'8px'}},'确认移除'),
+        h('div',{style:{fontSize:'14px',color:'#666',textAlign:'center',marginBottom:'16px'}},'确定要从错题本中移除这道题吗？'),
+        h('div',{style:{display:'flex',gap:'12px'}},
+          h('div',{className:'btn btn-outline',style:{flex:1},onClick:()=>root.innerHTML=''},'取消'),
+          h('div',{className:'btn btn-primary',style:{flex:1,background:'var(--danger)'},onClick:()=>{
+            records=records.filter(r=>!(r.cardId===cardId&&!r.isCorrect))
+            saveRecords(records)
+            root.innerHTML=''
+            renderWrong()
+          }},'移除')
+        )
+      )
+    )
+  )
+}
+
+// ========== Stats Page ==========
+function renderStats(){
+  const today=new Date().toISOString().slice(0,10)
+  const todayRecs=records.filter(r=>r.createdAt?.startsWith(today))
+  const allCorrect=records.filter(r=>r.isCorrect).length
+  const accuracy=records.length?Math.round(allCorrect/records.length*100):0
+
+  const subjects=['专业课','英语','政治']
+  const colors=['#722ed1','#0fc19c','#165dff']
+  const subData=subjects.map((n,i)=>({name:n,total:cards.filter(c=>c.subject===n).length,learned:cards.filter(c=>c.subject===n&&c.successCount>0).length,color:colors[i]}))
+
+  const dayNames=['周日','周一','周二','周三','周四','周五','周六']
+  const weekly=dayNames.map(d=>({day:d,count:0}))
+  const weekAgo=Date.now()-7*86400000
+  records.forEach(r=>{const t=new Date(r.createdAt).getTime();if(t>weekAgo){const d=new Date(r.createdAt).getDay();weekly[d].count++}})
+  const maxW=Math.max(...weekly.map(d=>d.count),1)
+
+  document.getElementById('page-stats').innerHTML=''
+  document.getElementById('page-stats').appendChild(
+    h('div',{},
+      h('div',{className:'card'},
+        h('div',{className:'section-title'},'学习概览'),
+        h('div',{className:'overview-grid'},
+          h('div',{className:'overview-item'},h('div',{className:'overview-val'},cards.length,h('span',{className:'overview-unit'},'张')),h('div',{className:'overview-label'},'总卡片')),
+          h('div',{className:'overview-item'},h('div',{className:'overview-val'},todayRecs.length,h('span',{className:'overview-unit'},'张')),h('div',{className:'overview-label'},'今日已学')),
+          h('div',{className:'overview-item'},h('div',{className:'overview-val'},accuracy,h('span',{className:'overview-unit'},'%')),h('div',{className:'overview-label'},'正确率')),
+          h('div',{className:'overview-item'},h('div',{className:'overview-val'},records.length,h('span',{className:'overview-unit'},'次')),h('div',{className:'overview-label'},'总练习'))
+        )
+      ),
+      h('div',{className:'card'},
+        h('div',{className:'section-title'},'近7天学习量'),
+        h('div',{className:'bar-chart'},
+          weekly.map(w=>h('div',{className:'bar-col'},
+            h('div',{className:'bar-val'},String(w.count)),
+            h('div',{className:'bar',style:{height:Math.max((w.count/maxW*160),4)+'px'}}),
+            h('div',{className:'bar-label'},w.day)
+          ))
+        )
+      ),
+      h('div',{className:'card'},
+        h('div',{className:'section-title'},'科目进度'),
+        subData.map(s=>h('div',{style:{marginBottom:'16px'}},
+          h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:'14px',marginBottom:'4px'}},
+            h('span',{},s.name),h('span',{style:{color:s.color}},s.total>0?Math.round(s.learned/s.total*100)+'%':'0%')
+          ),
+          h('div',{className:'progress-bar-dark'},h('div',{className:'progress-fill-color',style:{width:(s.total>0?(s.learned/s.total*100):0)+'%',background:s.color}}))
+        ))
+      ),
+      h('div',{className:'btn btn-outline',onClick:()=>goPage('today')},'返回首页')
+    )
+  )
+}
+
+// ========== Exam Page ==========
+function renderExam(data){
+  const examCards=(data&&data.cards)||cards
+  if(!examState.timer){examState={timeLeft:30*60,index:0,showAnswer:false,correct:0,timer:null};examState.timer=setInterval(()=>{examState.timeLeft--;if(examState.timeLeft<=0){clearInterval(examState.timer);goPage('exam-result',{total:examCards.length,correct:examState.correct})}renderExam()},1000)}
+  document.getElementById('page-exam').innerHTML=''
+  if(examState.index>=examCards.length){clearInterval(examState.timer);goPage('exam-result',{total:examCards.length,correct:examState.correct});return}
+  const c=examCards[examState.index]
+  const min=Math.floor(examState.timeLeft/60),sec=examState.timeLeft%60
+  document.getElementById('page-exam').appendChild(
+    h('div',{},
+      h('div',{className:'timer'},h('div',{style:{fontSize:'13px',marginBottom:'4px'}},'⏱️ 剩余时间'),h('div',{className:'timer-text'},String(min).padStart(2,'0')+':'+String(sec).padStart(2,'0'))),
+      h('div',{style:{textAlign:'center',marginBottom:'16px',color:'#666'}},(examState.index+1)+'/'+examCards.length),
+      h('div',{className:'flash-card'},
+        h('div',{className:'card-q'},c.question),
+        examState.showAnswer?h('div',{style:{background:'#F5F3FF',padding:'16px',borderRadius:'12px',margin:'16px 0',textAlign:'left',width:'100%',borderLeft:'4px solid var(--primary)'}},h('span',{style:{fontWeight:600}},'答案：'),' ',c.answer):null
+      ),
+      h('div',{className:'action-row',style:{margin:'16px 0'}},
+        !examState.showAnswer
+          ? h('div',{className:'btn btn-primary',onClick:()=>{examState.showAnswer=true;renderExam()}},'显示答案')
+          : [
+              h('div',{className:'btn btn-outline',style:{borderColor:'#ff9800',color:'#ff9800'},onClick:()=>{
+                records=[...records,{id:Date.now()+'_'+Math.random().toString(36).slice(2,8),cardId:c.id,isCorrect:false,subject:c.subject,createdAt:new Date().toISOString()}]
+                saveRecords(records)
+                examState.index++;examState.showAnswer=false;renderExam()
+              }},'💪 下次一定'),
+              h('div',{className:'btn btn-primary',onClick:()=>{
+                examState.correct++
+                records=[...records,{id:Date.now()+'_'+Math.random().toString(36).slice(2,8),cardId:c.id,isCorrect:true,subject:c.subject,createdAt:new Date().toISOString()}]
+                saveRecords(records)
+                examState.index++;examState.showAnswer=false;renderExam()
+              }},'🌟 很棒！')
+            ]
+      )
+    )
+  )
+}
+
+// ========== Exam Result ==========
+function renderExamResult(data){
+  if(examState.timer){clearInterval(examState.timer);examState.timer=null}
+  const total=data?.total||0,correct=data?.correct||0,rate=total>0?Math.round(correct/total*100):0
+  document.getElementById('page-exam-result').innerHTML=''
+  document.getElementById('page-exam-result').appendChild(
+    h('div',{className:'card',style:{textAlign:'center',padding:'60px 20px'}},
+      h('div',{style:{fontSize:'56px',marginBottom:'16px'}},'🎉'),
+      h('div',{style:{fontSize:'22px',fontWeight:700,marginBottom:'8px'}},'考试结束！'),
+      h('div',{style:{fontSize:'48px',fontWeight:700,color:'var(--primary)',margin:'16px 0'}},rate+'%'),
+      h('div',{style:{color:'#666',marginBottom:'8px'}},'共 '+total+' 题，正确 '+correct+' 题'),
+      h('div',{className:'btn btn-primary',onClick:()=>{examState={timeLeft:0,index:0,showAnswer:false,correct:0,timer:null};goPage('today')}},'返回首页'),
+      h('div',{className:'btn btn-outline',onClick:()=>goPage('cards')},'查看题库')
+    )
+  )
+}
+
+// ========== Import Page ==========
+
+function renderUpload(){
+  document.getElementById('page-upload').innerHTML=''
+  document.getElementById('page-upload').appendChild(
+    h('div',{},
+      h('div',{className:'card'},
+        h('div',{className:'section-title'},'📥 导入题库'),
+        h('div',{style:{fontSize:'14px',color:'#666',marginBottom:'16px'}},'使用题库生成器将 PDF 转为 JSON，再导入'),
+        h('input',{type:'file',accept:'.json',style:{display:'none'},id:'json-input',onChange:e=>handleJsonImport(e.target.files[0])}),
+        h('div',{className:'card',onClick:()=>document.getElementById('json-input').click(),
+          style:{border:'2px dashed var(--primary-light)',textAlign:'center',padding:'40px 20px',cursor:'pointer',background:'#fafafa'}},
+          h('div',{style:{fontSize:'40px',marginBottom:'12px'}},'📄'),
+          h('div',{style:{fontSize:'16px',fontWeight:600,color:'var(--primary)'}},'选择 JSON 文件导入'),
+          h('div',{style:{fontSize:'12px',color:'#999',marginTop:'4px'}},'由题库生成器导出的 .json 文件')
+        ),
+        h('div',{style:{marginTop:'20px'}},h('div',{style:{fontSize:'14px',fontWeight:600,marginBottom:'8px'}},'或者粘贴 JSON')),
+        h('textarea',{id:'json-paste',className:'form-textarea',placeholder:'[{"question":"...","answer":"...","subject":"专业课","tag":"..."}]',style:{minHeight:'100px',fontSize:'12px'}}),
+        h('div',{className:'btn btn-primary',style:{marginTop:'8px'},onClick:()=>{
+          try{const d=JSON.parse(document.getElementById('json-paste').value||'[]');if(!Array.isArray(d))throw new Error('需要数组');importCards(d)}catch(e){alert('JSON错误：'+e.message)}
+        }},'导入 JSON'),
+        h('div',{style:{marginTop:'16px',fontSize:'13px',color:'#666',padding:'12px',background:'#f0eeff',borderRadius:'8px'}},
+          h('div',{style:{fontWeight:600,marginBottom:'4px'}},'💡 如何使用'),
+          h('div',{},'1. 浏览器打开 tool/generator.html'),
+          h('div',{},'2. 上传PDF → 标记填空 → 导出JSON'),
+          h('div',{},'3. 回到此处导入')
+        )
+      )
+    )
+  )
+}
+function importCards(data){const imported=data.map(item=>({id:String(Date.now())+'_'+Math.random().toString(36).slice(2,6),question:item.question||'',answer:item.answer||'',subject:item.subject||'专业课',tag:item.tag||'',srsLevel:1,nextReview:new Date().toISOString().slice(0,10),successCount:0,failCount:0,createdAt:new Date().toISOString(),userId:'local'}));cards=[...imported,...cards];saveCards(cards);goPage('cards')}
+function handleJsonImport(file){if(!file)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d))throw new Error('需要数组格式');importCards(d)}catch(e){alert('JSON错误：'+e.message)}};r.readAsText(file)}
+
+// ========== Tab Bar Events ==========
+document.querySelectorAll('.tab-item').forEach(el=>{
+  el.addEventListener('click',()=>{
+    const page=el.dataset.page
+    if(page==='practice')practiceState={index:0,showAnswer:false,correct:0,wrongIds:[],userAnswer:''}
+    if(examState.timer&&page!=='exam'){clearInterval(examState.timer);examState.timer=null}
+    goPage(page)
+  })
+})
+
+// ========== Init ==========
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js')
+renderToday()
+</script>
+</body>
+</html>
