@@ -288,11 +288,23 @@ async function saveCardsToSupabase(c){
   cards = c;
   // 本地备份
   localStorage.setItem('mmll_cards', JSON.stringify(cards));
-  // 删除旧卡片（保留 id 为 0 的占位符）
-  const {error: delErr} = await supabaseClient.from('cards').delete().neq('id','0');
+  // 删除所有旧卡片（直接删除表中全部记录）
+  const {error: delErr} = await supabaseClient.from('cards').delete();
   if(delErr) console.error('删除旧卡片失败', delErr);
+  // 将卡片数据映射为与 Supabase 表字段对应的 snake_case 格式
+  const formatted = cards.map(card => ({
+    id: card.id,
+    question: card.question,
+    answer: card.answer,
+    subject: card.subject,
+    tag: card.tag,
+    srs_level: card.srsLevel,
+    next_review: card.nextReview,
+    success_count: card.successCount,
+    fail_count: card.failCount
+  }));
   // 插入新卡片
-  const {error: insErr} = await supabaseClient.from('cards').insert(cards);
+  const {error: insErr} = await supabaseClient.from('cards').insert(formatted);
   if(insErr) console.error('插入卡片失败', insErr);
 }
 
@@ -301,11 +313,19 @@ async function saveRecordsToSupabase(r){
   records = r;
   // 本地备份
   localStorage.setItem('mmll_records', JSON.stringify(records));
-  // 删除旧记录（保留 id 为 0 的占位符）
-  const {error: delErr} = await supabaseClient.from('records').delete().neq('id','0');
+  // 删除所有旧记录
+  const {error: delErr} = await supabaseClient.from('records').delete();
   if(delErr) console.error('删除旧记录失败', delErr);
+  // 将记录映射为与 Supabase 表字段对应的 snake_case
+  const formatted = records.map(rec => ({
+    id: rec.id,
+    card_id: rec.cardId,
+    is_correct: rec.isCorrect,
+    subject: rec.subject,
+    created_at: rec.createdAt
+  }));
   // 插入新记录
-  const {error: insErr} = await supabaseClient.from('records').insert(records);
+  const {error: insErr} = await supabaseClient.from('records').insert(formatted);
   if(insErr) console.error('插入记录失败', insErr);
 }
 
