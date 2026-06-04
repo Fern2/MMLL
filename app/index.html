@@ -284,67 +284,29 @@ async function loadFromCloud(){
 }
 
 async function saveCardsToSupabase(c){
+  // 更新卡片并同步到 Supabase
   cards = c;
-  saveToLocal();
-  if(!lcInitialized) return;
-  
-  // 同步到云端
-  try{
-    const query = new AV.Query(CARD_CLASS);
-    query.equalTo('userId', currentUser.id);
-    const existing = await query.find();
-    
-    // 删除旧数据
-    await AV.Object.destroyAll(existing);
-    
-    // 保存新数据
-    const toSave = cards.map(card => {
-      const obj = new AV.Object(CARD_CLASS);
-      obj.set('userId', currentUser.id);
-      obj.set('question', card.question);
-      obj.set('answer', card.answer);
-      obj.set('subject', card.subject);
-      obj.set('tag', card.tag);
-      obj.set('srsLevel', card.srsLevel || 1);
-      obj.set('nextReview', card.nextReview);
-      obj.set('successCount', card.successCount || 0);
-      obj.set('failCount', card.failCount || 0);
-      return obj;
-    });
-    
-    await AV.Object.saveAll(toSave);
-    console.log('卡片已同步到云端');
-  }catch(e){
-    console.log('同步卡片失败', e);
-  }
+  // 本地备份
+  localStorage.setItem('mmll_cards', JSON.stringify(cards));
+  // 删除旧卡片（保留 id 为 0 的占位符）
+  const {error: delErr} = await supabase.from('cards').delete().neq('id','0');
+  if(delErr) console.error('删除旧卡片失败', delErr);
+  // 插入新卡片
+  const {error: insErr} = await supabase.from('cards').insert(cards);
+  if(insErr) console.error('插入卡片失败', insErr);
 }
 
 async function saveRecordsToSupabase(r){
+  // 更新记录并同步到 Supabase
   records = r;
-  saveToLocal();
-  if(!lcInitialized) return;
-  
-  try{
-    const query = new AV.Query(RECORD_CLASS);
-    query.equalTo('userId', currentUser.id);
-    const existing = await query.find();
-    await AV.Object.destroyAll(existing);
-    
-    const toSave = records.map(rec => {
-      const obj = new AV.Object(RECORD_CLASS);
-      obj.set('userId', currentUser.id);
-      obj.set('cardId', rec.cardId);
-      obj.set('isCorrect', rec.isCorrect);
-      obj.set('subject', rec.subject);
-      obj.set('createdAt', rec.createdAt);
-      return obj;
-    });
-    
-    await AV.Object.saveAll(toSave);
-    console.log('记录已同步到云端');
-  }catch(e){
-    console.log('同步记录失败', e);
-  }
+  // 本地备份
+  localStorage.setItem('mmll_records', JSON.stringify(records));
+  // 删除旧记录（保留 id 为 0 的占位符）
+  const {error: delErr} = await supabase.from('records').delete().neq('id','0');
+  if(delErr) console.error('删除旧记录失败', delErr);
+  // 插入新记录
+  const {error: insErr} = await supabase.from('records').insert(records);
+  if(insErr) console.error('插入记录失败', insErr);
 }
 
 // 启动应用
