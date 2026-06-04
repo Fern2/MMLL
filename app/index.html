@@ -946,7 +946,9 @@ document.querySelectorAll('.tab-item').forEach(el=>{
 })
 
 // ========== Init ==========
-if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js')
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  navigator.serviceWorker.register('./sw.js')
+}
 renderToday()
 </script>
 </body>
