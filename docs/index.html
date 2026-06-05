@@ -187,6 +187,15 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // 本地缓存变量（与之前保持一致）
 let cards = [], records = [];
 
+// ========== UUID生成器 ==========
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 // ========== Supabase 数据操作 ==========
 async function loadFromSupabase(){
   // 加载卡片
@@ -207,20 +216,16 @@ async function saveCardsToSupabase(c){
   cards = c;
   // 本地备份
   localStorage.setItem('mmll_cards', JSON.stringify(cards));
-  // 覆盖写入 Supabase（先删后插）
-  const {error: delErr} = await supabase.from('cards').delete().neq('id','0');
-  if(delErr) console.error('删除旧卡片失败', delErr);
-  const {error: insErr} = await supabase.from('cards').insert(cards);
-  if(insErr) console.error('插入卡片失败', insErr);
+  // 同步到云端（使用upsert避免先删后插的问题）
+  const {error: upsertErr} = await supabaseClient.from('cards').upsert(cards, { onConflict: 'id' });
+  if(upsertErr) console.error('同步卡片失败', upsertErr);
 }
 
 async function saveRecordsToSupabase(r){
   records = r;
   localStorage.setItem('mmll_records', JSON.stringify(records));
-  const {error: delErr} = await supabase.from('records').delete().neq('id','0');
-  if(delErr) console.error('删除旧记录失败', delErr);
-  const {error: insErr} = await supabase.from('records').insert(records);
-  if(insErr) console.error('插入记录失败', insErr);
+  const {error: upsertErr} = await supabaseClient.from('records').upsert(records, { onConflict: 'id' });
+  if(upsertErr) console.error('同步记录失败', upsertErr);
 }
 
 // 将原有的 initLeanCloud 替换为初始化 Supabase
@@ -543,7 +548,7 @@ function showAddModal(){
         h('div',{className:'btn btn-primary',onClick:()=>{
           if(!q.trim())return alert('请输入问题')
           if(!a.trim())return alert('请输入答案')
-          cards=[{id:String(Date.now()),question:q.trim(),answer:a.trim(),subject:subj,tag:tag.trim(),srsLevel:1,nextReview:new Date().toISOString().slice(0,10),successCount:0,failCount:0},...cards]
+          cards=[{id:generateUUID(),question:q.trim(),answer:a.trim(),subject:subj,tag:tag.trim(),srsLevel:1,nextReview:new Date().toISOString().slice(0,10),successCount:0,failCount:0},...cards]
           saveCardsToSupabase(cards)
           root.innerHTML=''
           renderCards()
@@ -576,7 +581,7 @@ function showAddModalWithData(q,a,subj,tag){
         h('div',{className:'btn btn-primary',onClick:()=>{
           if(!q.trim())return alert('请输入问题')
           if(!a.trim())return alert('请输入答案')
-          cards=[{id:String(Date.now()),question:q.trim(),answer:a.trim(),subject:subj,tag:tag.trim(),srsLevel:1,nextReview:new Date().toISOString().slice(0,10),successCount:0,failCount:0},...cards]
+          cards=[{id:generateUUID(),question:q.trim(),answer:a.trim(),subject:subj,tag:tag.trim(),srsLevel:1,nextReview:new Date().toISOString().slice(0,10),successCount:0,failCount:0},...cards]
           saveCardsToSupabase(cards)
           root.innerHTML=''
           renderCards()
@@ -970,7 +975,7 @@ function renderUpload(){
     )
   )
 }
-function importCards(data){const imported=data.map(item=>({id:String(Date.now())+'_'+Math.random().toString(36).slice(2,6),question:item.question||'',answer:item.answer||'',subject:item.subject||'专业课',tag:item.tag||'',srsLevel:1,nextReview:new Date().toISOString().slice(0,10),successCount:0,failCount:0,createdAt:new Date().toISOString(),userId:'local'}));cards=[...imported,...cards];saveCards(cards);goPage('cards')}
+function importCards(data){const imported=data.map(item=>({id:generateUUID(),question:item.question||'',answer:item.answer||'',subject:item.subject||'专业课',tag:item.tag||'',srsLevel:1,nextReview:new Date().toISOString().slice(0,10),successCount:0,failCount:0,createdAt:new Date().toISOString(),userId:'local'}));cards=[...imported,...cards];saveCards(cards);goPage('cards')}
 function handleJsonImport(file){if(!file)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d))throw new Error('需要数组格式');importCards(d)}catch(e){alert('JSON错误：'+e.message)}};r.readAsText(file)}
 
 // ========== Tab Bar Events ==========
