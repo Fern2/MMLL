@@ -1,0 +1,292 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding: $spacing-lg $page-padding;
+  padding-bottom: 120rpx;
+}
+
+// 概览卡片
+.overviewCard {
+  background: $color-bg-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  margin-bottom: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.overviewTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-lg;
+}
+
+.overviewGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-md;
+}
+
+.overviewItem {
+  text-align: center;
+  padding: $spacing-md;
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+}
+
+.overviewValue {
+  font-size: 56rpx;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+  line-height: 1.2;
+}
+
+.overviewLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+}
+
+.overviewUnit {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  margin-left: 4rpx;
+}
+
+// 图表卡片
+.chartCard {
+  background: $color-bg-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  margin-bottom: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.chartTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-lg;
+}
+
+// 柱状图
+.barChart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 240rpx;
+  padding: 0 $spacing-sm;
+}
+
+.barItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.bar {
+  width: 48rpx;
+  background: $gradient-primary;
+  border-radius: $radius-sm $radius-sm 0 0;
+  margin-bottom: $spacing-xs;
+  transition: height 0.3s ease;
+}
+
+.barLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.barValue {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+}
+
+// 饼图区域
+.pieChart {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: $spacing-md 0;
+}
+
+.pieVisual {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 50%;
+  background: conic-gradient(
+    #722ed1 0deg 126deg,
+    #0fc19c 126deg 198deg,
+    #165dff 198deg 360deg
+  );
+  position: relative;
+}
+
+.pieCenter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140rpx;
+  height: 140rpx;
+  background: $color-bg-card;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.pieTotal {
+  font-size: 36rpx;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.pieTotalLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.pieLegend {
+  flex: 1;
+  margin-left: $spacing-xl;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.legendDot {
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 4rpx;
+  margin-right: $spacing-sm;
+}
+
+.legendText {
+  flex: 1;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.legendValue {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+// 进度列表
+.progressList {
+  margin-top: $spacing-lg;
+}
+
+.progressItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.progressIcon {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: $radius-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: $spacing-md;
+  font-size: 24rpx;
+}
+
+.progressInfo {
+  flex: 1;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: $spacing-xs;
+}
+
+.progressName {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.progressCount {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.progressBar {
+  height: 12rpx;
+  background: $color-bg-hover;
+  border-radius: 6rpx;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 6rpx;
+  transition: width 0.3s ease;
+}
+
+// 辐射指标卡片
+.radarCard {
+  background: $color-bg-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  margin-bottom: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.radarTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-lg;
+}
+
+.radarGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-md;
+}
+
+.radarItem {
+  text-align: center;
+  padding: $spacing-md;
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+}
+
+.radarValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+.radarLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+}
+
+.radarTrend {
+  font-size: $font-size-xs;
+  margin-top: 4rpx;
+}
+
+.trendUp {
+  color: $color-success;
+}
+
+.trendDown {
+  color: $color-error;
+}

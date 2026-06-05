@@ -1,0 +1,126 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding: $spacing-lg $page-padding;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 100rpx;
+}
+
+.practiceCard {
+  background: $color-bg-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  width: 100%;
+  box-shadow: $shadow-card;
+}
+
+.practiceIcon {
+  font-size: 80rpx;
+  display: block;
+  text-align: center;
+  margin-bottom: $spacing-md;
+}
+
+.practiceProgress {
+  display: block;
+  text-align: center;
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-lg;
+}
+
+.practiceQuestion {
+  display: block;
+  font-size: $font-size-lg;
+  color: $color-text-primary;
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: $spacing-xl;
+}
+
+.answerBox {
+  background: $color-bg-hover;
+  padding: $spacing-lg;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-xl;
+  border-left: 4rpx solid $color-primary;
+}
+
+.answerText {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.actionRow {
+  display: flex;
+  gap: $spacing-md;
+  justify-content: center;
+}
+
+.actionBtn {
+  min-width: 200rpx;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  padding: 0 $spacing-xl;
+}
+
+.btnOutline {
+  background: transparent;
+  color: $color-primary;
+  border: 2rpx solid $color-primary;
+}
+
+.btnSuccess {
+  background: $gradient-primary;
+  color: $color-text-white;
+  box-shadow: 0 4rpx 16rpx rgba(22, 93, 255, 0.3);
+}
+
+.btnDanger {
+  background: rgba(245, 63, 63, 0.1);
+  color: $color-error;
+  border: 2rpx solid $color-error;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 200rpx 0;
+  width: 100%;
+}
+
+.emptyIcon {
+  font-size: 120rpx;
+  margin-bottom: $spacing-lg;
+  display: block;
+}
+
+.emptyText {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  display: block;
+}
+
+.startBtn {
+  margin-top: $spacing-xl;
+  width: 400rpx;
+  height: 88rpx;
+  background: $gradient-primary;
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  margin-right: auto;
+}

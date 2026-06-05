@@ -1,0 +1,21 @@
+{
+  "name": "忙忙碌碌-医学考研助手",
+  "appid": "__UNI__MMLL001",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "app-plus": {
+    "usingComponents": true,
+    "splashscreen": {
+      "autoclose": true
+    },
+    "distribute": {
+      "android": {
+        "packageName": "com.mmll.app",
+        "permissions": [
+          "<uses-permission android:name=\"android.permission.INTERNET\"/>"
+        ]
+      }
+    }
+  }
+}

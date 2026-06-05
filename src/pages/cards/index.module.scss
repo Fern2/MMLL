@@ -1,0 +1,302 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: 120rpx;
+}
+
+// 顶部筛选栏
+.filterBar {
+  display: flex;
+  padding: $spacing-md $page-padding;
+  background: $color-bg-card;
+  border-bottom: 1rpx solid $color-divider;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.filterItem {
+  padding: $spacing-xs $spacing-md;
+  margin-right: $spacing-sm;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  background: $color-bg-hover;
+  border-radius: $radius-button;
+  white-space: nowrap;
+
+  &.active {
+    color: $color-text-white;
+    background: $color-primary;
+  }
+}
+
+// 卡片列表
+.cardList {
+  padding: $spacing-md $page-padding;
+}
+
+.cardItem {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-md;
+}
+
+.subjectTag {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  font-size: $font-size-xs;
+  color: $color-text-white;
+  border-radius: $radius-xs;
+}
+
+.tagZyk {
+  background: linear-gradient(135deg, #722ed1 0%, #b37feb 100%);
+}
+
+.tagYy {
+  background: linear-gradient(135deg, #0fc19c 0%, #5cdbd3 100%);
+}
+
+.tagDefault {
+  background: $color-primary;
+}
+
+.srsBadge {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  background: $color-bg-hover;
+  padding: 4rpx 12rpx;
+  border-radius: $radius-xs;
+}
+
+.cardQuestion {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  line-height: 1.6;
+  margin-bottom: $spacing-md;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.cardAnswer {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  padding: $spacing-md;
+  background: $color-bg-hover;
+  border-radius: $radius-sm;
+  margin-bottom: $spacing-md;
+  @include text-ellipsis-multi(2);
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cardMeta {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.cardActions {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.actionBtn {
+  padding: $spacing-xs $spacing-md;
+  font-size: $font-size-xs;
+  color: $color-primary;
+  background: rgba(22, 93, 255, 0.1);
+  border-radius: $radius-button;
+  border: none;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+// 底部操作栏
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc($spacing-md + env(safe-area-inset-bottom));
+  background: $color-bg-card;
+  border-top: 1rpx solid $color-divider;
+  gap: $spacing-md;
+}
+
+.bottomBtn {
+  flex: 1;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+}
+
+.btnPrimary {
+  background: $gradient-primary;
+  color: $color-text-white;
+  box-shadow: 0 4rpx 16rpx rgba(22, 93, 255, 0.3);
+}
+
+.btnOutline {
+  background: transparent;
+  color: $color-primary;
+  border: 2rpx solid $color-primary;
+}
+
+// 空状态
+.emptyState {
+  text-align: center;
+  padding: 120rpx 0;
+}
+
+.emptyIcon {
+  font-size: 120rpx;
+  margin-bottom: $spacing-lg;
+}
+
+.emptyText {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-lg;
+}
+
+.emptyBtn {
+  width: 280rpx;
+  height: 80rpx;
+  background: $gradient-primary;
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// 添加卡片弹窗
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  z-index: 100;
+}
+
+.modalContent {
+  width: 100%;
+  background: $color-bg-card;
+  border-radius: $radius-xl $radius-xl 0 0;
+  padding: $spacing-xl;
+  padding-bottom: calc($spacing-xl + env(safe-area-inset-bottom));
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-xl;
+}
+
+.modalTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.modalClose {
+  font-size: 48rpx;
+  color: $color-text-tertiary;
+  padding: 0 $spacing-sm;
+}
+
+.formGroup {
+  margin-bottom: $spacing-lg;
+}
+
+.formLabel {
+  display: block;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+}
+
+.formInput {
+  width: 100%;
+  padding: $spacing-md;
+  font-size: $font-size-md;
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  border: none;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: 2rpx solid $color-primary;
+  }
+}
+
+.formTextarea {
+  width: 100%;
+  min-height: 160rpx;
+  padding: $spacing-md;
+  font-size: $font-size-md;
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  border: none;
+  box-sizing: border-box;
+  resize: none;
+
+  &:focus {
+    outline: 2rpx solid $color-primary;
+  }
+}
+
+.formSelect {
+  width: 100%;
+  padding: $spacing-md;
+  font-size: $font-size-md;
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  border: none;
+}
+
+.submitBtn {
+  width: 100%;
+  height: 88rpx;
+  background: $gradient-primary;
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  margin-top: $spacing-lg;
+}

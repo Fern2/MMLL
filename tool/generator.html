@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>题库生成器 - 忙忙碌碌</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#6C5CE7;--danger:#f53f3f;--bg:#f5f5f5;--radius:12px;--text:#1a1a2e;--text-light:#666}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);max-width:900px;margin:0 auto;padding:24px;min-height:100vh}
+h1{font-size:24px;margin-bottom:4px;color:var(--primary)}
+.subtitle{color:var(--text-light);margin-bottom:24px;font-size:14px}
+
+.card{background:#fff;border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card-title{font-size:16px;font-weight:700;margin-bottom:12px}
+
+.btn{display:inline-block;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;margin-right:8px;transition:transform .1s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-outline{border:2px solid var(--primary);color:var(--primary);background:transparent}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-sm{padding:6px 14px;font-size:12px}
+
+.form-group{margin-bottom:12px}
+.form-label{font-size:13px;font-weight:600;display:block;margin-bottom:4px}
+textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:13px;line-height:1.6;resize:vertical;font-family:inherit}
+
+.upload-zone{border:2px dashed var(--primary);border-radius:var(--radius);padding:48px;text-align:center;cursor:pointer;background:#fafafa;transition:background .2s}
+.upload-zone:hover{background:#f0eeff}
+.upload-icon{font-size:48px;margin-bottom:12px}
+
+/* Segments */
+.segment-list{max-height:500px;overflow-y:auto}
+.segment-row{display:flex;gap:10px;align-items:center;padding:6px 8px;margin-bottom:4px;border-radius:6px;background:#f9f9f9;cursor:pointer}
+.segment-row:hover{background:#f0eeff}
+.segment-row.selected{background:#e8e4ff;border:1px solid var(--primary)}
+.segment-check{width:20px;height:20px;border:2px solid #ccc;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px}
+.segment-row.selected .segment-check{background:var(--primary);border-color:var(--primary);color:#fff}
+.segment-text{flex:1;font-size:13px;line-height:1.5;min-width:0}
+.segment-text mark{background:#ffe0e0;color:var(--danger);padding:1px 3px;border-radius:3px;font-weight:600}
+.preview-red{color:var(--danger);font-weight:600}
+
+.preview-card{background:#fafafa;border-radius:8px;padding:12px;margin-bottom:8px}
+.preview-q{font-size:14px;font-weight:600;margin-bottom:6px;line-height:1.5}
+.preview-a{font-size:12px;color:var(--text-light);line-height:1.5}
+.blanks{display:inline-block;background:var(--primary);color:#fff;padding:1px 8px;border-radius:4px;margin:0 2px;font-size:12px}
+
+.stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.stat{background:#fff;padding:12px 20px;border-radius:8px;text-align:center;min-width:80px}
+.stat-val{font-size:22px;font-weight:700;color:var(--primary)}
+.stat-label{font-size:11px;color:var(--text-light)}
+
+output{display:block;white-space:pre-wrap;font-family:monospace;font-size:12px;background:#1a1a2e;color:#a0ffa0;padding:16px;border-radius:8px;max-height:400px;overflow:auto}
+
+select{padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fff}
+
+.error{background:#fff0f0;color:var(--danger);padding:12px;border-radius:8px;margin-bottom:12px;font-size:13px}
+</style>
+</head>
+<body>
+
+<h1>📦 题库生成器</h1>
+<div class="subtitle">上传文字版 PDF → 自动拆分段落 → 标记挖空 → 导出 JSON → 导入 App</div>
+
+<!-- Step 1: Upload -->
+<div class="card" id="step1">
+  <div class="card-title">1️⃣ 上传 PDF</div>
+  <div class="form-group">
+    <label class="form-label">科目</label>
+    <select id="subject-select">
+      <option value="专业课">专业课</option>
+      <option value="英语">英语</option>
+      <option value="政治">政治</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">标签（可选）</label>
+    <input type="text" id="tag-input" placeholder="如：生物化学、内科学" style="padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;width:200px">
+  </div>
+  <input type="file" id="pdf-input" accept=".pdf" style="display:none" onchange="handlePdf(this.files[0])">
+  <div class="upload-zone" onclick="document.getElementById('pdf-input').click()">
+    <div class="upload-icon">📥</div>
+    <div style="font-size:16px;font-weight:600;color:var(--primary)">点击选择 PDF 文件</div>
+    <div style="font-size:12px;color:#999;margin-top:6px">文字版 PDF，红色文字 → 自动挖空</div>
+  </div>
+</div>
+
+<!-- Step 2: Preview & Edit -->
+<div class="card" id="step2" style="display:none">
+  <div class="card-title">2️⃣ 编辑卡片</div>
+  <div class="stats" id="stats-bar"></div>
+
+  <div class="form-group">
+    <label class="form-label">卡片预览（点击可编辑挖空）</label>
+  </div>
+  <div class="segment-list" id="segment-list"></div>
+
+  <div style="margin-top:16px">
+    <button class="btn btn-primary" onclick="exportJSON()">📤 导出 JSON 文件</button>
+    <button class="btn btn-outline" onclick="copyJSON()">📋 复制 JSON</button>
+    <button class="btn btn-outline" id="paste-btn" onclick="showPasteArea()">📄 粘贴文本解析</button>
+  </div>
+
+  <div id="paste-area" style="display:none;margin-top:12px">
+    <textarea id="paste-text" placeholder="直接粘贴文本内容，用【红色文字】标记挖空部分&#10;例如：急性胰腺炎最常见的原因是【胆道疾病】" style="min-height:200px"></textarea>
+    <button class="btn btn-primary btn-sm" onclick="parsePastedText()" style="margin-top:8px">解析文本</button>
+  </div>
+
+  <div style="margin-top:12px">
+    <label class="form-label">JSON 输出</label>
+    <output id="json-output"></output>
+  </div>
+</div>
+
+<!-- Step 3: Guide -->
+<div class="card" style="background:#f0eeff;border:1px solid var(--primary)">
+  <div class="card-title">📱 如何导入 App</div>
+  <ol style="padding-left:20px;font-size:13px;line-height:2">
+    <li>导出 JSON 文件（或复制 JSON）</li>
+    <li>打开 App → 题库 → 点击 "导入 JSON"</li>
+    <li>选择文件或粘贴 JSON</li>
+    <li>完成！开始刷题</li>
+  </ol>
+</div>
+
+<script>
+// ========== State ==========
+let cards = [] // {question, answer, subject, tag, sourceText}
+let fileName = ''
+
+// ========== PDF Parsing ==========
+async function handlePdf(file) {
+  if(!file) return
+  fileName = file.name.replace('.pdf','')
+
+  document.getElementById('step1').querySelector('.upload-zone').innerHTML =
+    '<div style="text-align:center;padding:20px"><div style="font-size:32px;margin-bottom:8px">⏳</div><div style="color:var(--primary);font-weight:600">解析中...</div></div>'
+
+  try {
+    const buf = await file.arrayBuffer()
+    const pdf = await pdfjsLib.getDocument({data:buf}).promise
+    const allSegments = []
+
+    for(let pn=1; pn<=pdf.numPages; pn++) {
+      const page = await pdf.getPage(pn)
+      const tc = await page.getTextContent()
+      const opl = await page.getOperatorList()
+      const OPS = pdfjsLib.OPS
+
+      // 追踪颜色
+      let fillColor = [0,0,0]
+      let textColorIdx = 0
+      const colors = []
+
+      for(let i=0; i<opl.fnArray.length; i++) {
+        const fn = opl.fnArray[i]
+        const args = opl.argsArray[i]
+        if(fn === OPS.setFillRGBColor) fillColor = args || [0,0,0]
+        else if(fn === OPS.setFillColor && args && args.length === 4) {
+          const [c,m,y,k] = args
+          fillColor = [1-Math.min(1,c+k), 1-Math.min(1,m+k), 1-Math.min(1,y+k)]
+        } else if(fn === OPS.showText || fn === OPS.showSpacedText) {
+          colors[textColorIdx] = [...fillColor]
+          textColorIdx++
+        }
+      }
+
+      // 按 Y 坐标分组（行）
+      const lines = []
+      let curLine = [], prevY = null
+      for(let i=0; i<tc.items.length; i++) {
+        const it = tc.items[i]
+        const y = it.transform ? Math.round(it.transform[5]) : 0
+        const col = colors[i]||[0,0,0]
+        const isRed = col[0] > 0.5 && col[1] < 0.3 && col[2] < 0.3
+
+        if(prevY !== null && Math.abs(y - prevY) > 2) {
+          if(curLine.length > 0) { lines.push(curLine); curLine = [] }
+        }
+        curLine.push({text: it.str, isRed})
+        prevY = y
+      }
+      if(curLine.length > 0) lines.push(curLine)
+
+      allSegments.push(...lines)
+    }
+
+    // 把每行变成一张卡片
+    cards = allSegments
+      .map(line => {
+        const fullText = line.map(s=>s.text).join('')
+        const hasRed = line.some(s=>s.isRed)
+        if(fullText.trim().length < 5) return null
+
+        // 题目：红色→____
+        const qParts = line.map(s=>s.isRed ? '____' : s.text)
+        const question = qParts.join('')
+        const answer = fullText.trim()
+
+        return { question, answer, subject: document.getElementById('subject-select').value, tag: document.getElementById('tag-input').value, sourceText: fullText.trim(), segments: line }
+      })
+      .filter(Boolean)
+      .slice(0, 50)
+
+    showStep2()
+  } catch(e) {
+    document.getElementById('step1').querySelector('.upload-zone').innerHTML =
+      '<div class="upload-icon">📥</div><div style="font-size:16px;font-weight:600;color:var(--primary)">点击选择 PDF 文件</div><div style="font-size:12px;color:#999;margin-top:6px">文字版 PDF，红色文字 → 自动挖空</div>'
+    alert('解析失败：' + e.message + '\n\n请确认是文字版PDF')
+    console.error(e)
+  }
+}
+
+// ========== Show Step 2 ==========
+function showStep2() {
+  document.getElementById('step2').style.display = 'block'
+  renderStats()
+  renderSegments()
+  updateJSON()
+}
+
+function renderStats() {
+  const hasRed = cards.filter(c=>c.segments?.some(s=>s.isRed)).length
+  document.getElementById('stats-bar').innerHTML = `
+    <div class="stat"><div class="stat-val">${cards.length}</div><div class="stat-label">总卡片</div></div>
+    <div class="stat"><div class="stat-val">${hasRed}</div><div class="stat-label">含挖空</div></div>
+  `
+}
+
+function renderSegments() {
+  const list = document.getElementById('segment-list')
+  list.innerHTML = cards.map((c,i) => `
+    <div class="segment-row" onclick="toggleCard(${i})" style="display:flex;gap:10px;align-items:flex-start;padding:8px;margin-bottom:6px;border-radius:8px;background:#f9f9f9">
+      <div style="flex:1">
+        <div style="font-size:12px;color:var(--primary);font-weight:600;margin-bottom:4px">卡片 ${i+1}</div>
+        <div class="segment-text">${renderSegsHTML(c.segments, true)}</div>
+        <div style="font-size:11px;color:#999;margin-top:4px">答案：${renderSegsHTML(c.segments, false)}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();mergeCard(${i})" title="合并到上一张">↑合并</button>
+        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteCard(${i})">✕</button>
+      </div>
+    </div>
+  `).join('')
+}
+
+function renderSegsHTML(segs, hideRed) {
+  return (segs||[]).map(s => {
+    if(s.isRed && hideRed) return '<span class="blanks">____</span>'
+    if(s.isRed) return '<span class="preview-red">「'+esc(s.text)+'」</span>'
+    return esc(s.text)
+  }).join('')
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+}
+
+function toggleCard(idx) {
+  const s = cards[idx].segments
+  const hasRed = s.some(seg=>seg.isRed)
+  // 点击切换红色/黑色状态
+  if(hasRed) {
+    s.forEach(seg=>{seg.isRed=false})
+  } else {
+    // 把最长的一段标红
+    const longest = s.reduce((a,b)=>a.text.length>b.text.length?a:b)
+    longest.isRed = true
+  }
+  cards[idx] = {...cards[idx], segments: s,
+    question: s.map(seg=>seg.isRed?'____':seg.text).join(''),
+    answer: s.map(seg=>seg.text).join('').trim()}
+  renderSegments()
+  updateJSON()
+}
+
+function mergeCard(idx) {
+  if(idx <= 0) return
+  const prev = cards[idx-1], cur = cards[idx]
+  prev.segments = [...prev.segments, ...cur.segments]
+  prev.question = prev.segments.map(s=>s.isRed?'____':s.text).join('')
+  prev.answer = prev.segments.map(s=>s.text).join('').trim()
+  prev.sourceText = prev.answer
+  cards.splice(idx, 1)
+  renderStats()
+  renderSegments()
+  updateJSON()
+}
+
+function deleteCard(idx) {
+  cards.splice(idx, 1)
+  renderStats()
+  renderSegments()
+  updateJSON()
+}
+
+// ========== Paste Text ==========
+function showPasteArea() {
+  const area = document.getElementById('paste-area')
+  area.style.display = area.style.display==='none'?'block':'none'
+}
+
+function parsePastedText() {
+  const raw = document.getElementById('paste-text').value.trim()
+  if(!raw) return
+  const subject = document.getElementById('subject-select').value
+  const tag = document.getElementById('tag-input').value
+
+  // 按双换行拆分段落
+  const paragraphs = raw.split(/\n\s*\n/).filter(p=>p.trim().length>5)
+
+  cards = paragraphs.map(p => {
+    const segs = []
+    // 匹配 【红色文字】 标记
+    let lastIdx = 0
+    const re = /【(.+?)】/g
+    let m
+    while((m=re.exec(p))!==null) {
+      if(m.index > lastIdx) segs.push({text: p.slice(lastIdx, m.index), isRed: false})
+      segs.push({text: m[1], isRed: true})
+      lastIdx = m.index + m[0].length
+    }
+    if(lastIdx < p.length) segs.push({text: p.slice(lastIdx), isRed: false})
+    if(segs.length===0) segs.push({text: p, isRed: false})
+
+    const question = segs.map(s=>s.isRed?'____':s.text).join('')
+    return {question, answer: p.trim(), subject, tag, sourceText: p.trim(), segments: segs}
+  })
+
+  fileName = '粘贴文本'
+  showStep2()
+  document.getElementById('paste-text').value = ''
+  document.getElementById('paste-area').style.display = 'none'
+}
+
+// ========== Export ==========
+function updateJSON() {
+  const out = cards.map(c=>({question:c.question,answer:c.answer,subject:c.subject,tag:c.tag}))
+  document.getElementById('json-output').textContent = JSON.stringify(out, null, 2)
+}
+
+function exportJSON() {
+  const out = cards.map(c=>({question:c.question,answer:c.answer,subject:c.subject,tag:c.tag}))
+  const blob = new Blob([JSON.stringify(out,null,2)],{type:'application/json'})
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = (fileName||'题库') + '.json'
+  a.click()
+}
+
+function copyJSON() {
+  const out = cards.map(c=>({question:c.question,answer:c.answer,subject:c.subject,tag:c.tag}))
+  navigator.clipboard.writeText(JSON.stringify(out,null,2)).then(()=>{
+    const btn = document.querySelector('#step2 .btn-outline')
+    const orig = btn.textContent
+    btn.textContent = '✅ 已复制！'
+    setTimeout(()=>btn.textContent=orig, 1500)
+  })
+}
+</script>
+</body>
+</html>

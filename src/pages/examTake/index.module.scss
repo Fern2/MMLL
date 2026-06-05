@@ -1,0 +1,96 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #e8f0ff 0%, $color-bg-page 100%);
+  padding: $spacing-lg $page-padding;
+}
+
+.timer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-md;
+  background: $color-bg-card;
+  border-radius: $radius-button;
+  margin-bottom: $spacing-lg;
+}
+
+.timerIcon {
+  font-size: 36rpx;
+  margin-right: $spacing-sm;
+}
+
+.timerText {
+  font-size: 48rpx;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+.progress {
+  text-align: center;
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-lg;
+}
+
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-xl;
+}
+
+.question {
+  font-size: $font-size-lg;
+  color: $color-text-primary;
+  line-height: 1.6;
+}
+
+.answer {
+  margin-top: $spacing-lg;
+  padding: $spacing-lg;
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  border-left: 4rpx solid $color-primary;
+}
+
+.answerLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.actions {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.showBtn,
+.wrongBtn,
+.correctBtn {
+  flex: 1;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+}
+
+.showBtn {
+  background: $color-bg-card;
+  color: $color-primary;
+  border: 2rpx solid $color-primary;
+}
+
+.wrongBtn {
+  background: rgba(245, 63, 63, 0.1);
+  color: $color-error;
+  border: 2rpx solid $color-error;
+}
+
+.correctBtn {
+  background: $gradient-primary;
+  color: $color-text-white;
+}

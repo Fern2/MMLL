@@ -1,0 +1,27 @@
+@use '@/styles/variables.scss' as *;
+
+page {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB',
+    sans-serif;
+  font-size: $font-size-md;
+  line-height: $line-height-normal;
+  color: $color-text-primary;
+  background-color: $color-bg-page;
+}
+
+// 全局毛玻璃卡片样式
+.card-glass {
+  background: $glass-bg;
+  backdrop-filter: $glass-blur;
+  -webkit-backdrop-filter: $glass-blur;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+}
+
+// 毛玻璃深色
+.card-glass-dark {
+  background: $glass-bg-dark;
+  backdrop-filter: $glass-blur;
+  -webkit-backdrop-filter: $glass-blur;
+  border-radius: $radius-lg;
+}

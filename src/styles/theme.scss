@@ -1,0 +1,58 @@
+// ============================================
+// 主题配色变量（医学考研助手）
+// ============================================
+
+// 品牌主题色
+$color-primary: #165dff;
+$color-primary-light: #4080ff;
+$color-primary-dark: #0e42d2;
+
+// 功能色
+$color-success: #00b42a;
+$color-warning: #ff7d00;
+$color-error: #f53f3f;
+$color-info: #165dff;
+
+// 背景色
+$color-bg-page: #f0f5ff;
+$color-bg-card: #ffffff;
+$color-bg-hover: #f2f3f5;
+
+// 文本色
+$color-text-primary: #1d2129;
+$color-text-secondary: #4e5969;
+$color-text-tertiary: #86909c;
+$color-text-disabled: #c9cdd4;
+$color-text-white: #ffffff;
+
+// 边框色
+$color-border: #e5e6eb;
+$color-divider: #f2f3f5;
+
+// ============================================
+// 科目颜色
+// ============================================
+$color-subject-zyk: #722ed1; // 政治-紫色
+$color-subject-yy: #0fc19c;  // 英语-绿色
+$color-subject-zyk-light: #b37feb; // 政治浅色
+$color-subject-yy-light: #5cdbd3;  // 英语浅色
+
+// ============================================
+// 难度颜色
+// ============================================
+$color-difficulty-easy: #00b42a;   // 简单-绿色
+$color-difficulty-medium: #ff7d00; // 中等-橙色
+$color-difficulty-hard: #f53f3f;   // 困难-红色
+
+// ============================================
+// 毛玻璃效果
+// ============================================
+$glass-bg: rgba(255, 255, 255, 0.7);
+$glass-bg-dark: rgba(255, 255, 255, 0.5);
+$glass-blur: blur(20rpx);
+
+// ============================================
+// 渐变背景
+// ============================================
+$gradient-primary: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+$gradient-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
