@@ -1851,8 +1851,22 @@ async function showPdfMaskEditor(fileName, pdfData, fileSize) {
     document.getElementById('editorContainer').appendChild(drawCanvas);
     
     let isDrawing = false;
+    let drawMode = true; // 划线模式开关
     let points = [];
     let startX, startY;
+    
+    const updateDrawMode = () => {
+      canvas.style.cursor = drawMode ? 'crosshair' : 'default';
+      if (drawMode) {
+        tip.textContent = '✍️ 划线模式下：按住并划线，松开生成遮挡';
+        canvas.style.pointerEvents = 'auto';
+        drawCanvas.style.pointerEvents = 'none';
+      } else {
+        tip.textContent = '📜 滚动模式下：上下滑动浏览PDF';
+        canvas.style.pointerEvents = 'none';
+        drawCanvas.style.pointerEvents = 'none';
+      }
+    };
     
     const getPos = (e) => {
       const rect = canvas.getBoundingClientRect();
@@ -1872,6 +1886,7 @@ async function showPdfMaskEditor(fileName, pdfData, fileSize) {
     };
     
     const startDraw = (e) => {
+      if (!drawMode) return; // 滚动模式：不拦截，允许滚动
       e.preventDefault();
       e.stopPropagation();
       isDrawing = true;
@@ -1947,6 +1962,9 @@ async function showPdfMaskEditor(fileName, pdfData, fileSize) {
     canvas.addEventListener('touchstart', startDraw, { passive: false });
     canvas.addEventListener('touchmove', draw, { passive: false });
     canvas.addEventListener('touchend', endDraw);
+
+    // 初始化划线模式
+    updateDrawMode();
     
     // 清理函数
     window.clearMaskTip = () => {
@@ -1973,6 +1991,16 @@ async function showPdfMaskEditor(fileName, pdfData, fileSize) {
     renderMasksList();
     renderCurrentPageMasks();
   };
+
+  window.toggleDrawMode = () => {
+    drawMode = !drawMode;
+    updateDrawMode();
+    const btn = document.getElementById('drawModeBtn');
+    if (btn) {
+      btn.textContent = drawMode ? '✍️ 划线中' : '📜 滚动中';
+      btn.style.background = drawMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.3)';
+    }
+  };
   
   root.innerHTML = '';
   root.innerHTML = `
@@ -1985,6 +2013,7 @@ async function showPdfMaskEditor(fileName, pdfData, fileSize) {
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
             <button class="btn" style="background:rgba(255,255,255,0.2);color:white;border:none;padding:6px 12px;font-size:13px;" onclick="addMaskFromCanvas()">✍️ 添加遮挡</button>
+            <button class="btn" id="drawModeBtn" style="background:rgba(255,255,255,0.2);color:white;border:none;padding:6px 12px;font-size:13px;" onclick="window.toggleDrawMode()">✍️ 划线中</button>
             <span style="font-size:12px;">遮挡: <span id="maskCountDisplay">${masks.length}</span>个</span>
             <span style="font-size:20px;cursor:pointer;" onclick="document.getElementById('modal-root').innerHTML=''">✕</span>
           </div>
