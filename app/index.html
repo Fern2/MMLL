@@ -377,9 +377,12 @@ async function saveCardsToSupabase(c){
     return base;
   });
   
-  // 使用upsert同步到云端
-  const {error: upsertErr} = await supabaseClient.from('cards').upsert(formatted, { onConflict: 'id' });
-  if(upsertErr) console.error('同步卡片失败', upsertErr);
+  // 先删掉云端所有数据，再全量写入（确保删除也同步）
+  await supabaseClient.from('cards').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  if (formatted.length > 0) {
+    const {error: upsertErr} = await supabaseClient.from('cards').upsert(formatted, { onConflict: 'id' });
+    if(upsertErr) console.error('同步卡片失败', upsertErr);
+  }
 }
 
 async function saveRecordsToSupabase(r){
@@ -599,6 +602,14 @@ function renderPracticeHub(){
           h('div',{className:'menu-icon',style:{background:'#165dff22'}},'📊'),
           h('div',{className:'menu-title'},'学习统计'),
           h('div',{className:'menu-desc'},'查看学习进度')
+        ),
+        h('div',{className:'menu-item',onClick:()=>{
+          if(cards.length>0)goPage('exam',{cards:[...cards].sort(()=>Math.random()-0.5)})
+          else alert('题库为空，无法模拟考试')
+        }},
+          h('div',{className:'menu-icon',style:{background:'#ff980022'}},'⏱️'),
+          h('div',{className:'menu-title'},'模拟考试'),
+          h('div',{className:'menu-desc'},'30分钟限时练习')
         )
       ),
       h('div',{className:'card',style:{marginTop:'16px'}},
@@ -640,7 +651,7 @@ function renderReciteHub(){
       ),
       h('div',{className:'card',style:{marginTop:'16px'}},
         h('div',{style:{fontSize:'15px',fontWeight:700,marginBottom:'12px'}},'📚 已导入的PDF'),
-        h('div',{},cards.filter(c=>c.type==='pdf-mask').length>0
+        cards.filter(c=>c.type==='pdf-mask').length>0
           ? cards.filter(c=>c.type==='pdf-mask').map(c=>
               h('div',{className:'task-item',onClick:()=>goPage('pdf-mask',c)},
                 h('div',{className:'task-left'},
@@ -820,6 +831,7 @@ function deleteCard(id){
   if(!confirm('确定要删除这张卡片吗？'))return
   cards=cards.filter(c=>c.id!==id)
   saveCards(cards)
+  saveCardsToSupabase(cards)
   renderCards()
 }
 
@@ -902,7 +914,7 @@ function renderStudy(data){
           h('div',{},h('div',{style:{fontSize:'28px',fontWeight:700,color:'var(--success)'}},String(studyState.successCount)),h('div',{style:{fontSize:'12px',color:'#666'}},'记住了')),
           h('div',{},h('div',{style:{fontSize:'28px',fontWeight:700,color:'var(--danger)'}},String(studyState.failCount)),h('div',{style:{fontSize:'12px',color:'#666'}},'没记住'))
         ),
-        h('div',{className:'btn btn-primary',onClick:()=>{studyState={index:0,showAnswer:false,successCount:0,failCount:0,userAnswer:'',revealedMasks:[],currentPage:1};goPage('today')}},'返回首页')
+        h('div',{className:'btn btn-primary',onClick:()=>{studyState={index:0,showAnswer:false,successCount:0,failCount:0,userAnswer:'',revealedMasks:[],currentPage:1};goPage('home')}},'返回首页')
       )
     )
     return
@@ -974,18 +986,9 @@ function renderStudy(data){
       h('div',{className:'action-row',style:{marginTop:'16px'}},
         isPdfMaskCard
           ? [
-              h('div',{className:'btn btn-outline',style:{borderColor:'#ff9800',color:'#ff9800'},onClick:()=>{
-                studyState.failCount++
-                records=[...records,{id:Date.now()+'_'+Math.random().toString(36).slice(2,8),cardId:c.id,isCorrect:false,subject:c.subject,createdAt:new Date().toISOString()}]
-                saveRecords(records)
-                studyState.index++;studyState.showAnswer=false;studyState.revealedMasks=[];studyState.currentPage=1;renderStudy()
-              }},'💪 没记住'),
               h('div',{className:'btn btn-primary',onClick:()=>{
-                studyState.successCount++
-                records=[...records,{id:Date.now()+'_'+Math.random().toString(36).slice(2,8),cardId:c.id,isCorrect:true,subject:c.subject,createdAt:new Date().toISOString()}]
-                saveRecords(records)
                 studyState.index++;studyState.showAnswer=false;studyState.revealedMasks=[];studyState.currentPage=1;renderStudy()
-              }},'🎉 记住了！')
+              }},'▶ 下一张')
             ]
           : [
               !studyState.showAnswer
@@ -1235,7 +1238,7 @@ function renderStats(){
           h('div',{className:'progress-bar-dark'},h('div',{className:'progress-fill-color',style:{width:(s.total>0?(s.learned/s.total*100):0)+'%',background:s.color}}))
         ))
       ),
-      h('div',{className:'btn btn-outline',onClick:()=>goPage('today')},'返回首页')
+      h('div',{className:'btn btn-outline',onClick:()=>goPage('home')},'返回首页')
     )
   )
 }
@@ -1288,7 +1291,7 @@ function renderExamResult(data){
       h('div',{style:{fontSize:'22px',fontWeight:700,marginBottom:'8px'}},'考试结束！'),
       h('div',{style:{fontSize:'48px',fontWeight:700,color:'var(--primary)',margin:'16px 0'}},rate+'%'),
       h('div',{style:{color:'#666',marginBottom:'8px'}},'共 '+total+' 题，正确 '+correct+' 题'),
-      h('div',{className:'btn btn-primary',onClick:()=>{examState={timeLeft:0,index:0,showAnswer:false,correct:0,timer:null};goPage('today')}},'返回首页'),
+      h('div',{className:'btn btn-primary',onClick:()=>{examState={timeLeft:0,index:0,showAnswer:false,correct:0,timer:null};goPage('home')}},'返回首页'),
       h('div',{className:'btn btn-outline',onClick:()=>goPage('cards')},'查看题库')
     )
   )
@@ -1586,17 +1589,19 @@ async function renderPdfMaskPage() {
       maskEl.onclick = (e) => {
         e.stopPropagation();
         if (pdfMaskState.revealedMasks.includes(maskKey)) {
+          // 已显示答案，点击恢复遮挡
           pdfMaskState.revealedMasks = pdfMaskState.revealedMasks.filter(k => k !== maskKey);
-          maskEl.style.background = 'transparent';
-          maskEl.style.border = '2px solid #ff9800';
-          maskEl.style.boxShadow = '0 0 10px rgba(255,152,0,0.5)';
-          maskEl.innerHTML = '❓';
-          maskEl.title = '点击显示答案';
-        } else {
-          pdfMaskState.revealedMasks.push(maskKey);
           maskEl.style.background = 'linear-gradient(135deg, #6C5CE7 0%, #A29BFE 100%)';
           maskEl.style.border = 'none';
           maskEl.style.boxShadow = '0 1px 4px rgba(0,0,0,0.2)';
+          maskEl.innerHTML = '❓';
+          maskEl.title = '点击显示答案';
+        } else {
+          // 遮挡状态，点击显示答案
+          pdfMaskState.revealedMasks.push(maskKey);
+          maskEl.style.background = 'transparent';
+          maskEl.style.border = '2px solid #ff9800';
+          maskEl.style.boxShadow = '0 0 10px rgba(255,152,0,0.5)';
           maskEl.innerHTML = '✅';
           maskEl.title = '点击恢复遮挡';
         }
@@ -1738,6 +1743,7 @@ async function showPdfMaskEditor(fileName, pdfData, fileSize) {
     try {
       const page = await pdfDoc.getPage(pageNum);
       const scale = 1.5;
+      pdfEditorState.scale = scale;
       const viewport = page.getViewport({ scale });
       
       const canvas = document.getElementById('pdfCanvas');
@@ -1764,17 +1770,18 @@ async function showPdfMaskEditor(fileName, pdfData, fileSize) {
   };
   
   const renderCurrentPageMasks = () => {
-    document.querySelectorAll('[id^="mask-"]').forEach(el => el.remove());
+    const container = document.getElementById('editorContainer');
+    container.querySelectorAll('[id^="mask-"]').forEach(el => el.remove());
     masks.filter(m => m.page === currentPage).forEach((m, i) => {
       const maskEl = document.createElement('div');
       maskEl.id = 'mask-' + i;
       maskEl.style.cssText = `
         position: absolute;
-        left: ${m.left}px;
-        top: ${m.top}px;
-        width: ${m.width}px;
-        height: ${m.height}px;
-        background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
+        left: ${m.left * pdfEditorState.scale}px;
+        top: ${m.top * pdfEditorState.scale}px;
+        width: ${m.width * pdfEditorState.scale}px;
+        height: ${m.height * pdfEditorState.scale}px;
+        background: linear-gradient(135deg, #6C5CE7 0%, #A29BFE 100%);
         border-radius: 4px;
         cursor: pointer;
         opacity: 1;
@@ -1782,8 +1789,8 @@ async function showPdfMaskEditor(fileName, pdfData, fileSize) {
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 12px;
-        border: 2px solid rgba(255,255,255,0.2);
+        font-size: 11px;
+        font-weight: bold;
       `;
       maskEl.innerHTML = '✋';
       maskEl.title = '点击删除此遮挡';
@@ -1795,7 +1802,7 @@ async function showPdfMaskEditor(fileName, pdfData, fileSize) {
           renderCurrentPageMasks();
         }
       };
-      document.getElementById('editorContainer').appendChild(maskEl);
+      container.appendChild(maskEl);
     });
   };
   
@@ -1848,8 +1855,22 @@ async function showPdfMaskEditor(fileName, pdfData, fileSize) {
     document.getElementById('editorContainer').appendChild(drawCanvas);
     
     let isDrawing = false;
+    let drawMode = true; // 划线模式开关
     let points = [];
     let startX, startY;
+    
+    const updateDrawMode = () => {
+      canvas.style.cursor = drawMode ? 'crosshair' : 'default';
+      if (drawMode) {
+        tip.textContent = '✍️ 划线模式下：按住并划线，松开生成遮挡';
+        canvas.style.pointerEvents = 'auto';
+        drawCanvas.style.pointerEvents = 'none';
+      } else {
+        tip.textContent = '📜 滚动模式下：上下滑动浏览PDF';
+        canvas.style.pointerEvents = 'none';
+        drawCanvas.style.pointerEvents = 'none';
+      }
+    };
     
     const getPos = (e) => {
       const rect = canvas.getBoundingClientRect();
@@ -1869,6 +1890,7 @@ async function showPdfMaskEditor(fileName, pdfData, fileSize) {
     };
     
     const startDraw = (e) => {
+      if (!drawMode) return; // 滚动模式：不拦截，允许滚动
       e.preventDefault();
       e.stopPropagation();
       isDrawing = true;
@@ -1911,16 +1933,17 @@ async function showPdfMaskEditor(fileName, pdfData, fileSize) {
       const maxX = Math.max(startPoint.x, endPoint.x);
       const lineY = startPoint.y;
       
-      // 行高（约30px，根据PDF缩放比例调整）
-      const lineHeight = 30 * (canvas.height / canvas.offsetHeight);
+      // 行高（约30px）
+      const lineHeight = 30;
       
-      // 从划线位置往上一行高
+      // 从划线位置往上一行高，坐标需要除以缩放比例以保存原始位置
+      const scale = pdfEditorState.scale || 1;
       const mask = {
         page: currentPage,
-        left: minX,
-        top: lineY - lineHeight, // 往上一行高
-        width: maxX - minX,
-        height: lineHeight
+        left: minX / scale,
+        top: (lineY - lineHeight) / scale,
+        width: (maxX - minX) / scale,
+        height: lineHeight / scale
       };
       
       masks.push(mask);
@@ -1943,6 +1966,9 @@ async function showPdfMaskEditor(fileName, pdfData, fileSize) {
     canvas.addEventListener('touchstart', startDraw, { passive: false });
     canvas.addEventListener('touchmove', draw, { passive: false });
     canvas.addEventListener('touchend', endDraw);
+
+    // 初始化划线模式
+    updateDrawMode();
     
     // 清理函数
     window.clearMaskTip = () => {
@@ -1969,50 +1995,51 @@ async function showPdfMaskEditor(fileName, pdfData, fileSize) {
     renderMasksList();
     renderCurrentPageMasks();
   };
+
+  window.toggleDrawMode = () => {
+    drawMode = !drawMode;
+    updateDrawMode();
+    const btn = document.getElementById('drawModeBtn');
+    if (btn) {
+      btn.textContent = drawMode ? '✍️ 划线中' : '📜 滚动中';
+      btn.style.background = drawMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.3)';
+    }
+  };
   
   root.innerHTML = '';
   root.innerHTML = `
     <div class="modal" onclick="if(event.target===this)this.parentElement.innerHTML=''">
-      <div class="modal-content" style="max-width:900px;max-height:95vh;overflow:hidden;display:flex;flex-direction:column;padding:20px;pointer-events:auto;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-          <div style="font-size:18px;font-weight:700;">PDF遮挡背题编辑器</div>
-          <div class="modal-close" onclick="document.getElementById('modal-root').innerHTML=''" style="font-size:28px;cursor:pointer;">×</div>
-        </div>
-        
-        <div style="display:flex;gap:12px;margin-bottom:12px;">
-          <div style="flex:1;padding:12px;background:#f5f3ff;border-radius:8px;text-align:center;">
-            <div style="font-size:24px;font-weight:700;color:var(--primary);" id="maskCountDisplay">0</div>
-            <div style="font-size:12px;color:#666;">遮挡数量</div>
+      <div style="position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;z-index:1000;background:white;">
+        <div style="padding:12px 16px;background:linear-gradient(135deg,#6C5CE7,#A29BFE);color:white;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+          <div>
+            <div style="font-size:12px;opacity:0.9;">📕 PDF遮挡编辑器</div>
+            <div style="font-size:15px;font-weight:600;">${fileName}</div>
           </div>
-          <div style="flex:2;padding:12px;background:#fff3e0;border-radius:8px;">
-            <div style="font-size:14px;font-weight:600;margin-bottom:8px;">操作步骤</div>
-            <div style="font-size:12px;color:#666;">1. 点击「添加遮挡」  2. 触控笔划线  3. 松手生成遮挡  4. 保存</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button class="btn" style="background:rgba(255,255,255,0.2);color:white;border:none;padding:6px 12px;font-size:13px;" onclick="addMaskFromCanvas()">✍️ 添加遮挡</button>
+            <button class="btn" id="drawModeBtn" style="background:rgba(255,255,255,0.2);color:white;border:none;padding:6px 12px;font-size:13px;" onclick="window.toggleDrawMode()">✍️ 划线中</button>
+            <span style="font-size:12px;">遮挡: <span id="maskCountDisplay">${masks.length}</span>个</span>
+            <span style="font-size:20px;cursor:pointer;" onclick="document.getElementById('modal-root').innerHTML=''">✕</span>
           </div>
         </div>
         
-        <div style="display:flex;gap:8px;margin-bottom:12px;">
-          <div class="btn btn-outline" id="prevBtn" onclick="changePage(-1)">◀</div>
-          <div style="flex:1;text-align:center;padding:10px;font-size:14px;font-weight:600;" id="pageInfo">第 1 / ${pageCount} 页</div>
-          <div class="btn btn-outline" id="nextBtn" onclick="changePage(1)">▶</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 16px;background:#f5f3ff;flex-shrink:0;">
+          <button class="btn btn-outline" style="padding:6px 16px;" id="prevBtn" onclick="changePage(-1)">◀</button>
+          <span style="flex:1;text-align:center;font-size:14px;font-weight:600;" id="pageInfo">第 ${currentPage} / ${pageCount} 页</span>
+          <button class="btn btn-outline" style="padding:6px 16px;" id="nextBtn" onclick="changePage(1)">▶</button>
         </div>
         
-        <div style="flex:1;overflow:auto;position:relative;background:#525659;border-radius:8px;margin-bottom:12px;padding:8px;" id="editorContainer" onclick="event.stopPropagation()">
-          <canvas id="pdfCanvas" style="display:block;margin:0 auto;max-width:100%;cursor:crosshair;"></canvas>
+        <div id="editorContainer" style="flex:1;overflow:auto;position:relative;background:#525659;" onclick="event.stopPropagation()">
+          <canvas id="pdfCanvas" style="width:100%;height:auto;display:block;cursor:crosshair;"></canvas>
         </div>
         
-        <div style="display:flex;gap:8px;margin-bottom:12px;">
-          <div class="btn btn-primary" onclick="addMaskFromCanvas()">🎯 添加遮挡</div>
-          <div class="btn btn-outline" onclick="masks.length=0;renderMasksList();renderCurrentPageMasks();if(window.clearMaskTip)window.clearMaskTip();" style="border-color:#f53f3f;color:#f53f3f;">清除全部</div>
+        <div style="padding:12px 16px;background:#f9f9f9;flex-shrink:0;">
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input id="pdfCardTag" class="form-input" placeholder="标签（可选）" style="flex:1;padding:8px 12px;">
+            <div class="btn btn-outline" onclick="masks.length=0;renderMasksList();renderCurrentPageMasks();if(window.clearMaskTip)window.clearMaskTip();" style="border-color:#f53f3f;color:#f53f3f;padding:8px 12px;">清空</div>
+            <div class="btn btn-primary" onclick="savePdfMaskCard()" style="padding:8px 20px;">💾 保存</div>
+          </div>
         </div>
-        
-        <div style="background:#fff3e0;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;color:#666;">
-          <span style="font-weight:600;">💡 提示：</span>点击紫色遮挡条可直接删除
-        </div>
-        
-        <div style="font-size:14px;font-weight:600;margin-bottom:8px;">标签（可选）</div>
-        <input id="pdfCardTag" class="form-input" placeholder="如：生理学、病理学..." style="margin-bottom:12px;">
-        
-        <div class="btn btn-primary" style="width:100%;" onclick="savePdfMaskCard()">💾 保存为背题卡片</div>
       </div>
     </div>
   `;

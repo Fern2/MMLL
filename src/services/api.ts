@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Card, PracticeRecord, StudyStats } from '../types'
+import type { Card, PracticeRecord, StudyStats, PdfFile } from '../types'
 
 // 模拟数据（后端未接入时的回退）
 import { mockCards, mockStats } from './mockData'
@@ -84,4 +84,94 @@ export async function fetchStats(_userId?: string): Promise<StudyStats> {
     subjects: [],
     weeklyData: [],
   }
+}
+
+// ========== PDF文件管理 ==========
+
+/**
+ * 上传PDF文件到Supabase Storage
+ * @param file - 文件对象
+ * @param userId - 用户ID
+ * @returns 文件信息
+ */
+export async function uploadPdfFile(file: File, userId: string): Promise<PdfFile> {
+  const fileExt = file.name.split('.').pop()?.toLowerCase()
+  if (fileExt !== 'pdf') {
+    throw new Error('仅支持PDF格式文件')
+  }
+
+  // 生成唯一文件名
+  const fileName = `${userId}_${Date.now()}.pdf`
+  const filePath = `pdfs/${fileName}`
+
+  // 上传到Supabase Storage
+  const { error: uploadError } = await supabase.storage
+    .from('pdf-files')
+    .upload(filePath, file, {
+      contentType: 'application/pdf',
+    })
+
+  if (uploadError) throw uploadError
+
+  // 获取文件URL
+  const { data: urlData, error: urlError } = supabase.storage
+    .from('pdf-files')
+    .getPublicUrl(filePath)
+
+  if (urlError) throw urlError
+
+  // 保存文件记录到数据库
+  const { data: recordData, error: recordError } = await supabase
+    .from('pdf_files')
+    .insert({
+      name: file.name,
+      path: filePath,
+      url: urlData.publicUrl,
+      size: file.size,
+      userId,
+    })
+    .select()
+    .single()
+
+  if (recordError) throw recordError
+
+  return recordData as PdfFile
+}
+
+/**
+ * 删除PDF文件（从Storage和数据库）
+ * @param fileId - 文件记录ID
+ * @param filePath - 文件路径
+ */
+export async function deletePdfFile(fileId: string, filePath: string): Promise<void> {
+  // 从Storage删除文件
+  const { error: storageError } = await supabase.storage
+    .from('pdf-files')
+    .remove([filePath])
+
+  if (storageError) throw storageError
+
+  // 从数据库删除记录
+  const { error: dbError } = await supabase
+    .from('pdf_files')
+    .delete()
+    .eq('id', fileId)
+
+  if (dbError) throw dbError
+}
+
+/**
+ * 获取用户的PDF文件列表
+ * @param userId - 用户ID
+ * @returns PDF文件列表
+ */
+export async function fetchUserPdfs(userId: string): Promise<PdfFile[]> {
+  const { data, error } = await supabase
+    .from('pdf_files')
+    .select('*')
+    .eq('userId', userId)
+    .order('createdAt', { ascending: false })
+
+  if (error) throw error
+  return (data || []) as PdfFile[]
 }

@@ -59,3 +59,14 @@ export interface Countdown {
   minutes: number
   seconds: number
 }
+
+// PDF文件
+export interface PdfFile {
+  id: string
+  name: string
+  path: string
+  url: string
+  size: number
+  createdAt: string
+  userId: string
+}
