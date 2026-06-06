@@ -576,7 +576,7 @@ function renderPracticeHub(){
           if(due.length>0)goPage('study',{cards:due,index:0})
           else alert('暂无待复习卡片')
         }},
-          h('div',{className:'menu-icon',style:{background:'#667eea22'}},''📋''),
+          h('div',{className:'menu-icon',style:{background:'#667eea22'}},'📋'),
           h('div',{className:'menu-title'},'今日任务'),
           h('div',{className:'menu-desc'},dueCards.length+'张待复习')
         ),
@@ -585,17 +585,17 @@ function renderPracticeHub(){
           if(randomCards.length>0)goPage('study',{cards:randomCards,index:0})
           else alert('题库为空')
         }},
-          h('div',{className:'menu-icon',style:{background:'#11998e22'}},''🎲''),
+          h('div',{className:'menu-icon',style:{background:'#11998e22'}},'🎲'),
           h('div',{className:'menu-title'},'随机练习'),
           h('div',{className:'menu-desc'},'随机抽取10张练习')
         ),
         h('div',{className:'menu-item',onClick:()=>goPage('wrong')},
-          h('div',{className:'menu-icon',style:{background:'#eb575722'}},''📝''),
+          h('div',{className:'menu-icon',style:{background:'#eb575722'}},'📝'),
           h('div',{className:'menu-title'},'错题本'),
           h('div',{className:'menu-desc'},wrongCards.length+'道错题')
         ),
         h('div',{className:'menu-item',onClick:()=>goPage('stats')},
-          h('div',{className:'menu-icon',style:{background:'#165dff22'}},''📊''),
+          h('div',{className:'menu-icon',style:{background:'#165dff22'}},'📊'),
           h('div',{className:'menu-title'},'学习统计'),
           h('div',{className:'menu-desc'},'查看学习进度')
         )
@@ -623,7 +623,7 @@ function renderReciteHub(){
       ),
       h('div',{className:'menu-grid'},
         h('div',{className:'menu-item',onClick:()=>document.getElementById('pdf-mask-input').click()},
-          h('div',{className:'menu-icon',style:{background:'#11998e22'}},''📁''),
+          h('div',{className:'menu-icon',style:{background:'#11998e22'}},'📁'),
           h('div',{className:'menu-title'},'导入PDF'),
           h('div',{className:'menu-desc'},'上传PDF添加遮挡')
         ),
@@ -632,7 +632,7 @@ function renderReciteHub(){
           if(pdfCards.length>0)goPage('study',{cards:pdfCards,index:0})
           else alert('暂无PDF卡片，请先导入PDF')
         }},
-          h('div',{className:'menu-icon',style:{background:'#38ef7d22'}},''📖''),
+          h('div',{className:'menu-icon',style:{background:'#38ef7d22'}},'📖'),
           h('div',{className:'menu-title'},'背诵PDF'),
           h('div',{className:'menu-desc'},'开始背诵已导入的PDF')
         )
