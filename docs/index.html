@@ -34,6 +34,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .header-card{background:linear-gradient(135deg,#6C5CE7,#A29BFE);color:#fff;padding:24px;border-radius:var(--radius);margin-bottom:16px}
 .countdown-days{font-size:56px;font-weight:700;line-height:1}
 .stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.menu-item{background:var(--card);border-radius:12px;padding:16px;cursor:pointer;text-align:center;transition:transform .1s}
+.menu-item:active{transform:scale(.98)}
+.menu-icon{font-size:28px;margin-bottom:8px}
+.menu-title{font-size:14px;font-weight:600;color:var(--text)}
+.menu-desc{font-size:11px;color:var(--text-light);margin-top:2px}
 .stat-card{background:var(--card-bg);padding:16px;border-radius:var(--radius);text-align:center;box-shadow:var(--shadow)}
 .stat-val{font-size:28px;font-weight:700;color:var(--primary)}
 .stat-label{font-size:12px;color:var(--text-light);margin-top:4px}
@@ -136,15 +142,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <!-- Tab Bar -->
 <div class="tabbar" id="tabbar">
-  <div class="tab-item active" data-page="today"><span class="tab-icon">🏠</span>首页</div>
+  <div class="tab-item active" data-page="home"><span class="tab-icon">🏠</span>首页</div>
+  <div class="tab-item" data-page="practice"><span class="tab-icon">📝</span>刷题</div>
+  <div class="tab-item" data-page="recite"><span class="tab-icon">📖</span>背诵</div>
   <div class="tab-item" data-page="cards"><span class="tab-icon">📚</span>题库</div>
-  <div class="tab-item" data-page="practice"><span class="tab-icon">✍️</span>刷题</div>
-  <div class="tab-item" data-page="wrong"><span class="tab-icon">📝</span>错题</div>
-  <div class="tab-item" data-page="stats"><span class="tab-icon">📊</span>我的</div>
 </div>
 
-<!-- Page: Today -->
-<div class="page active" id="page-today"></div>
+<!-- Page: Home -->
+<div class="page active" id="page-home"></div>
+
+<!-- Page: Practice Hub -->
+<div class="page" id="page-practice"></div>
+
+<!-- Page: Recite Hub -->
+<div class="page" id="page-recite"></div>
 
 <!-- Page: Cards -->
 <div class="page" id="page-cards"></div>
@@ -408,7 +419,7 @@ initSupabase();
 // ========== Router ==========
 function renderApp(){
   // 显示首页
-  goPage('today');
+  goPage('home');
 }
 
 let currentPage = 'today'
@@ -446,12 +457,13 @@ function goPage(page,data){
 // ========== Render ==========
 function render(page,data){
   switch(page){
-    case 'today':renderToday();break
+    case 'home':renderHome();break
     case 'cards':renderCards();break
-    case 'practice':renderPractice();break
+    case 'practice':renderPracticeHub();break
+    case 'recite':renderReciteHub();break
+    case 'study':renderStudy(data);break
     case 'wrong':renderWrong();break
     case 'stats':renderStats();break
-    case 'study':renderStudy(data);break
     case 'exam':renderExam(data);break
     case 'exam-result':renderExamResult(data);break
     case 'upload':renderUpload();break
@@ -475,21 +487,17 @@ function h(tag,attrs,...children){
   return el
 }
 
-// ========== Today Page ==========
-function renderToday(){
+// ========== Home Page ==========
+function renderHome(){
   const now=new Date(), examDate=new Date(now.getFullYear(),11,21)
   const diff=Math.max(0,examDate-now),days=Math.floor(diff/86400000)
-  const dueCards=cards.filter(c=>new Date(c.nextReview)<=now).slice(0,10)
+  const dueCards=cards.filter(c=>new Date(c.nextReview)<=now)
   const learned=cards.filter(c=>c.successCount>0).length
   const pct=cards.length?Math.round(learned/cards.length*100):0
-  const todayRecords=records.filter(r=>r.createdAt?.startsWith(now.toISOString().slice(0,10)))
-  const todayLearned=todayRecords.length
+  const wrongCount=cards.filter(c=>c.failCount>0).length
 
-  const getIcon=s=>{if(s==='专业课')return['📚','#722ed1'];if(s==='英语')return['📖','#0fc19c'];return['📝','#165dff']}
-  const subjectStats=()=>{const ss=['专业课','英语','政治'];return ss.map(n=>{const sc=cards.filter(c=>c.subject===n);return{name:n,total:sc.length,learned:sc.filter(c=>c.successCount>0).length}})}
-
-  document.getElementById('page-today').innerHTML=''
-  document.getElementById('page-today').appendChild(
+  document.getElementById('page-home').innerHTML=''
+  document.getElementById('page-home').appendChild(
     h('div',{},
       h('div',{className:'header-card'},
         h('div',{style:{textAlign:'center'}},h('div',{},h('span',{},'距离考研还有'))),
@@ -503,29 +511,146 @@ function renderToday(){
       ),
       h('div',{className:'stats-grid'},
         h('div',{className:'stat-card'},h('div',{className:'stat-val'},String(dueCards.length)),h('div',{className:'stat-label'},'今日待复习')),
-        h('div',{className:'stat-card'},h('div',{className:'stat-val'},String(todayLearned)),h('div',{className:'stat-label'},'今日已学')),
+        h('div',{className:'stat-card'},h('div',{className:'stat-val'},String(wrongCount)),h('div',{className:'stat-label'},'错题数')),
         h('div',{className:'stat-card'},h('div',{className:'stat-val'},String(cards.length)),h('div',{className:'stat-label'},'总卡片'))
       ),
+      // 两大模式入口
+      h('div',{style:{display:'flex',gap:'12px',margin:'20px 0'}},
+        h('div',{
+          style:{flex:1,padding:'24px 16px',background:'linear-gradient(135deg,#667eea,#764ba2)',borderRadius:'16px',color:'white',cursor:'pointer',textAlign:'center'},
+          onClick:()=>goPage('practice')
+        },
+          h('div',{style:{fontSize:'32px',marginBottom:'8px'}},'📝'),
+          h('div',{style:{fontSize:'18px',fontWeight:700,marginBottom:'4px'}},'刷题模式'),
+          h('div',{style:{fontSize:'12px',opacity:0.9}},'测试知识掌握程度')
+        ),
+        h('div',{
+          style:{flex:1,padding:'24px 16px',background:'linear-gradient(135deg,#11998e,#38ef7d)',borderRadius:'16px',color:'white',cursor:'pointer',textAlign:'center'},
+          onClick:()=>goPage('recite')
+        },
+          h('div',{style:{fontSize:'32px',marginBottom:'8px'}},'📖'),
+          h('div',{style:{fontSize:'18px',fontWeight:700,marginBottom:'4px'}},'背诵模式'),
+          h('div',{style:{fontSize:'12px',opacity:0.9}},'PDF标注遮挡背诵')
+        )
+      ),
+      // 快捷入口
       h('div',{className:'card'},
         h('div',{style:{fontSize:'15px',fontWeight:700,marginBottom:'12px'}},'📅 SRS 今日到期 ('+dueCards.length+'张)'),
         dueCards.length>0
-          ? dueCards.map(c=>{
+          ? dueCards.slice(0,3).map(c=>{
+              const getIcon=s=>{if(s==='专业课')return['📚','#722ed1'];if(s==='英语')return['📖','#0fc19c'];return['📝','#165dff']}
               const[icon,bg]=getIcon(c.subject)
-              return h('div',{className:'task-item',onClick:()=>goPage('study',{cards:dueCards,index:0})},
+              return h('div',{className:'task-item',onClick:()=>goPage('study',{cards:[c],index:0})},
                 h('div',{className:'task-left'},
                   h('div',{className:'task-icon',style:{background:bg+'22'}},icon),
-                  h('div',{className:'task-info'},h('div',{className:'task-q'},c.question),h('div',{className:'task-meta'},c.subject+' · '+c.tag+' · Lv.'+c.srsLevel))
+                  h('div',{className:'task-info'},h('div',{className:'task-q'},c.question),h('div',{className:'task-meta'},c.subject+' · '+c.tag))
                 ),
                 h('span',{},'›')
               )
             })
-          : h('div',{className:'empty'},h('div',{className:'empty-icon'},'🎉'),h('div',{className:'empty-text'},'太棒了！今日没有待复习卡片'))
+          : h('div',{className:'empty'},h('div',{className:'empty-icon'},'🎉'),h('div',{className:'empty-text'},'太棒了！今日没有待复习'))
+      )
+    )
+  )
+}
+
+// ========== Practice Hub ==========
+function renderPracticeHub(){
+  const now=new Date()
+  const dueCards=cards.filter(c=>new Date(c.nextReview)<=now)
+  const wrongCards=cards.filter(c=>c.failCount>0)
+  const learned=cards.filter(c=>c.successCount>0).length
+  const todayRecords=records.filter(r=>r.createdAt?.startsWith(now.toISOString().slice(0,10)))
+  const todayLearned=todayRecords.length
+
+  document.getElementById('page-practice').innerHTML=''
+  document.getElementById('page-practice').appendChild(
+    h('div',{},
+      h('div',{style:{padding:'16px',background:'linear-gradient(135deg,#667eea,#764ba2)',color:'white',borderRadius:'12px',marginBottom:'16px'}},
+        h('div',{style:{fontSize:'20px',fontWeight:700,marginBottom:'4px'}},'📝 刷题模式'),
+        h('div',{style:{fontSize:'13px',opacity:0.9}},'测试知识掌握程度，发现薄弱环节')
       ),
-      h('div',{className:'btn btn-primary',onClick:()=>{
-        const due=cards.filter(c=>new Date(c.nextReview)<=new Date()).slice(0,10)
-        if(due.length>0)goPage('study',{cards:due,index:0})
-        else goPage('cards')
-      }},dueCards.length>0?'开始今日学习':'去资料库添加卡片')
+      h('div',{className:'menu-grid'},
+        h('div',{className:'menu-item',onClick:()=>{
+          const due=cards.filter(c=>new Date(c.nextReview)<=new Date())
+          if(due.length>0)goPage('study',{cards:due,index:0})
+          else alert('暂无待复习卡片')
+        }},
+          h('div',{className:'menu-icon',style:{background:'#667eea22'}},''📋''),
+          h('div',{className:'menu-title'},'今日任务'),
+          h('div',{className:'menu-desc'},dueCards.length+'张待复习')
+        ),
+        h('div',{className:'menu-item',onClick:()=>{
+          const randomCards=[...cards].sort(()=>Math.random()-0.5).slice(0,10)
+          if(randomCards.length>0)goPage('study',{cards:randomCards,index:0})
+          else alert('题库为空')
+        }},
+          h('div',{className:'menu-icon',style:{background:'#11998e22'}},''🎲''),
+          h('div',{className:'menu-title'},'随机练习'),
+          h('div',{className:'menu-desc'},'随机抽取10张练习')
+        ),
+        h('div',{className:'menu-item',onClick:()=>goPage('wrong')},
+          h('div',{className:'menu-icon',style:{background:'#eb575722'}},''📝''),
+          h('div',{className:'menu-title'},'错题本'),
+          h('div',{className:'menu-desc'},wrongCards.length+'道错题')
+        ),
+        h('div',{className:'menu-item',onClick:()=>goPage('stats')},
+          h('div',{className:'menu-icon',style:{background:'#165dff22'}},''📊''),
+          h('div',{className:'menu-title'},'学习统计'),
+          h('div',{className:'menu-desc'},'查看学习进度')
+        )
+      ),
+      h('div',{className:'card',style:{marginTop:'16px'}},
+        h('div',{style:{fontSize:'15px',fontWeight:700,marginBottom:'12px'}},'📈 今日概况'),
+        h('div',{className:'stats-grid'},
+          h('div',{className:'stat-card'},h('div',{className:'stat-val'},String(todayLearned)),h('div',{className:'stat-label'},'今日已学')),
+          h('div',{className:'stat-card'},h('div',{className:'stat-val'},String(learned)),h('div',{className:'stat-label'},'总已学')),
+          h('div',{className:'stat-card'},h('div',{className:'stat-val'},String(cards.length)),h('div',{className:'stat-label'},'总卡片'))
+        )
+      )
+    )
+  )
+}
+
+// ========== Recite Hub ==========
+function renderReciteHub(){
+  document.getElementById('page-recite').innerHTML=''
+  document.getElementById('page-recite').appendChild(
+    h('div',{},
+      h('div',{style:{padding:'16px',background:'linear-gradient(135deg,#11998e,#38ef7d)',color:'white',borderRadius:'12px',marginBottom:'16px'}},
+        h('div',{style:{fontSize:'20px',fontWeight:700,marginBottom:'4px'}},'📖 背诵模式'),
+        h('div',{style:{fontSize:'13px',opacity:0.9}},'导入PDF进行标注遮挡背诵')
+      ),
+      h('div',{className:'menu-grid'},
+        h('div',{className:'menu-item',onClick:()=>document.getElementById('pdf-mask-input').click()},
+          h('div',{className:'menu-icon',style:{background:'#11998e22'}},''📁''),
+          h('div',{className:'menu-title'},'导入PDF'),
+          h('div',{className:'menu-desc'},'上传PDF添加遮挡')
+        ),
+        h('div',{className:'menu-item',onClick:()=>{
+          const pdfCards=cards.filter(c=>c.type==='pdf-mask')
+          if(pdfCards.length>0)goPage('study',{cards:pdfCards,index:0})
+          else alert('暂无PDF卡片，请先导入PDF')
+        }},
+          h('div',{className:'menu-icon',style:{background:'#38ef7d22'}},''📖''),
+          h('div',{className:'menu-title'},'背诵PDF'),
+          h('div',{className:'menu-desc'},'开始背诵已导入的PDF')
+        )
+      ),
+      h('div',{className:'card',style:{marginTop:'16px'}},
+        h('div',{style:{fontSize:'15px',fontWeight:700,marginBottom:'12px'}},'📚 已导入的PDF'),
+        h('div',{},cards.filter(c=>c.type==='pdf-mask').length>0
+          ? cards.filter(c=>c.type==='pdf-mask').map(c=>
+              h('div',{className:'task-item',onClick:()=>goPage('pdf-mask',c)},
+                h('div',{className:'task-left'},
+                  h('div',{className:'task-icon',style:{background:'#11998e22'}},'📄'),
+                  h('div',{className:'task-info'},h('div',{className:'task-q'},c.fileName||'PDF文件'),h('div',{className:'task-meta'},'页数: '+c.pageCount))
+                ),
+                h('span',{},'›')
+              )
+            )
+          : h('div',{className:'empty'},h('div',{className:'empty-icon'},'📭'),h('div',{className:'empty-text'},'暂无PDF卡片'))
+      )
     )
   )
 }
@@ -583,7 +708,6 @@ function renderCards(filterSubj,filterTag){
       ,
       h('div',{className:'bottom-bar'},
         h('div',{className:'bottom-btn',onClick:()=>document.getElementById('pdf-mask-input').click()},'📕 导入PDF'),
-        h('div',{className:'bottom-btn',onClick:()=>goPage('exam',{cards})},'📝 模拟考试'),
         h('div',{className:'bottom-btn',style:{background:'var(--primary)',color:'#fff'},onClick:showAddModal},'+ 添加卡片')
       )
     )
